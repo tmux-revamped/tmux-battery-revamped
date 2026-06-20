@@ -22,6 +22,8 @@ placeholders=(
   "\#{battery_graph}"
   "\#{battery_remain}"
   "\#{battery_charging_watts}"
+  "\#{battery_cycles}"
+  "\#{battery_health}"
 )
 
 commands=(
@@ -38,6 +40,8 @@ commands=(
   "#(${BAT_CMD} graph)"
   "#(${BAT_CMD} remain)"
   "#(${BAT_CMD} charging_watts)"
+  "#(${BAT_CMD} cycles)"
+  "#(${BAT_CMD} health)"
 )
 
 interpolate() {

@@ -26,7 +26,9 @@ from [tmux-plugin-template](https://github.com/gufranco/tmux-plugin-template).
 | `#{battery_color_status_fg}` / `#{battery_color_status_bg}` | status colors |
 | `#{battery_graph}` | a proportional charge bar |
 | `#{battery_remain}` | time remaining, for example `4:32` |
-| `#{battery_charging_watts}` | charging watts on macOS |
+| `#{battery_charging_watts}` | charging or discharging watts |
+| `#{battery_cycles}` | charge cycle count |
+| `#{battery_health}` | battery health, for example `96%` |
 
 ## Install
 
@@ -54,6 +56,8 @@ Press `prefix + I` to install.
 | `@battery_revamped_graph_empty` | `░` | empty cell character |
 | `@battery_revamped_remain_format` | `%s` | format for the remaining time |
 | `@battery_revamped_watts_format` | `%sW` | format for charging watts |
+| `@battery_revamped_cycles_format` | `%s` | format for the cycle count |
+| `@battery_revamped_health_format` | `%s%%` | format for battery health |
 | `@battery_revamped_enable_logging` | `0` | set to `1` to log under `~/.tmux/battery-revamped-logs` |
 
 ## Support by platform and architecture
@@ -64,10 +68,12 @@ The macOS path uses built-in tools and works the same on Intel and Apple Silicon
 |-------|--------------------------|----------------------------------|
 | Percentage and status | yes, `/sys/class/power_supply` then `acpi` | yes, `pmset` |
 | Remaining time | yes, with `acpi` installed | yes, `pmset` |
-| Charging watts | no | yes, `system_profiler` |
+| Charging or discharging watts | yes, `power_now` | yes, `system_profiler` |
+| Cycle count and health | yes, `/sys` | yes, `ioreg` (works on Apple Silicon) |
 
 On Linux, percentage and status work through `/sys` with no extra package;
-remaining time needs `acpi` installed. Charging watts is macOS only.
+remaining time needs `acpi` installed. Cycle count and health read from `ioreg`
+on macOS, which works on Apple Silicon, and from `/sys` on Linux.
 
 ## License
 

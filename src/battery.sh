@@ -34,6 +34,8 @@ battery_refresh() {
   cache_set status "$(read_battery_status)"
   cache_set remain "$(read_battery_remain)"
   cache_set watts "$(read_battery_watts)"
+  cache_set cycles "$(read_battery_cycles)"
+  cache_set health "$(read_battery_health)"
 }
 
 battery_tick() {
@@ -64,6 +66,8 @@ main() {
     graph)           battery_render_graph "$(cache_get percent)" ;;
     remain)          battery_render_remain "$(cache_get remain)" ;;
     charging_watts)  battery_render_watts "$(cache_get watts)" ;;
+    cycles)          battery_render_cycles "$(cache_get cycles)" ;;
+    health)          battery_render_health "$(cache_get health)" ;;
     *)               return 0 ;;
   esac
 }

@@ -93,6 +93,24 @@ battery_render_watts() {
   printf "${fmt}" "${1}"
 }
 
+battery_render_cycles() {
+  [[ -z "${1}" ]] && { echo ""; return 0; }
+  local fmt
+  fmt=$(get_tmux_option "@battery_revamped_cycles_format" "%s")
+  # shellcheck disable=SC2059
+  printf "${fmt}" "${1}"
+}
+
+battery_render_health() {
+  [[ -z "${1}" ]] && { echo ""; return 0; }
+  local fmt
+  fmt=$(get_tmux_option "@battery_revamped_health_format" "%s%%")
+  # shellcheck disable=SC2059
+  printf "${fmt}" "${1}"
+}
+
+export -f battery_render_cycles
+export -f battery_render_health
 export -f battery_tier
 export -f battery_charge_icon
 export -f battery_charge_color

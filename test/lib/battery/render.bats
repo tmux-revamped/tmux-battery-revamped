@@ -90,3 +90,13 @@ teardown() {
   [[ -z "$(battery_render_watts "")" ]]
   [[ "$(battery_render_watts 60)" == "60W" ]]
 }
+
+@test "render.sh - battery_render_cycles formats the value" {
+  [[ -z "$(battery_render_cycles "")" ]]
+  [[ "$(battery_render_cycles 142)" == "142" ]]
+}
+
+@test "render.sh - battery_render_health formats the value" {
+  [[ -z "$(battery_render_health "")" ]]
+  [[ "$(battery_render_health 96)" == "96%" ]]
+}

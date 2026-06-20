@@ -11,6 +11,8 @@ setup() {
   read_battery_status() { echo "discharging"; }
   read_battery_remain() { echo "4:32"; }
   read_battery_watts() { echo "60"; }
+  read_battery_cycles() { echo "142"; }
+  read_battery_health() { echo "96"; }
 }
 
 teardown() {
@@ -39,6 +41,15 @@ teardown() {
   [[ "$(cache_get status)" == "discharging" ]]
   [[ "$(cache_get remain)" == "4:32" ]]
   [[ "$(cache_get watts)" == "60" ]]
+  [[ "$(cache_get cycles)" == "142" ]]
+  [[ "$(cache_get health)" == "96" ]]
+}
+
+@test "battery.sh dispatcher - cycles and health render the cache" {
+  run main cycles
+  [[ "${output}" == "142" ]]
+  run main health
+  [[ "${output}" == "96%" ]]
 }
 
 @test "battery.sh dispatcher - refresh subcommand caches values" {

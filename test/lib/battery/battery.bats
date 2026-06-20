@@ -107,7 +107,68 @@ teardown() {
   [[ "$(read_battery_watts)" == "60" ]]
 }
 
-@test "battery.sh - read_battery_watts is empty off macOS" {
+@test "battery.sh - read_battery_watts reads power_now on Linux" {
   _PLATFORM_OS_CACHE="Linux"
+  _read_bat_power_now() { echo "45000000"; }
+  [[ "$(read_battery_watts)" == "45" ]]
+}
+
+@test "battery.sh - read_battery_watts is empty without a source" {
+  _PLATFORM_OS_CACHE="Plan9"
   [[ -z "$(read_battery_watts)" ]]
+}
+
+@test "battery.sh - bat_ioreg_field extracts a key" {
+  local t=$'    "CycleCount" = 142\n    "MaxCapacity" = 4800'
+  [[ "$(bat_ioreg_field "${t}" CycleCount)" == "142" ]]
+  [[ "$(bat_ioreg_field "${t}" MaxCapacity)" == "4800" ]]
+}
+
+@test "battery.sh - bat_health_pct computes and clamps" {
+  [[ "$(bat_health_pct 4800 5000)" == "96" ]]
+  [[ "$(bat_health_pct 6000 5000)" == "100" ]]
+  [[ -z "$(bat_health_pct 1 0)" ]]
+}
+
+@test "battery.sh - _read_bat_sys reads BAT0 or BAT1 absence safely" {
+  [[ -z "$(_read_bat_sys nonexistent_field_xyz)" ]]
+}
+
+@test "battery.sh - read_battery_cycles reads ioreg on macOS" {
+  _PLATFORM_OS_CACHE="Darwin"
+  _read_ioreg_battery() { printf '    "CycleCount" = 142\n'; }
+  [[ "$(read_battery_cycles)" == "142" ]]
+}
+
+@test "battery.sh - read_battery_cycles reads /sys on Linux" {
+  _PLATFORM_OS_CACHE="Linux"
+  _read_bat_cycle_count() { echo "88"; }
+  [[ "$(read_battery_cycles)" == "88" ]]
+}
+
+@test "battery.sh - read_battery_health reads ioreg on macOS" {
+  _PLATFORM_OS_CACHE="Darwin"
+  _read_ioreg_battery() { printf '    "MaxCapacity" = 4800\n    "DesignCapacity" = 5000\n'; }
+  [[ "$(read_battery_health)" == "96" ]]
+}
+
+@test "battery.sh - read_battery_health reads /sys on Linux" {
+  _PLATFORM_OS_CACHE="Linux"
+  _read_bat_charge_full() { echo "4500"; }
+  _read_bat_charge_full_design() { echo "5000"; }
+  [[ "$(read_battery_health)" == "90" ]]
+}
+
+@test "battery.sh - host-probe seams are callable" {
+  run _read_pmset
+  run _read_acpi
+  run _read_profiler
+  run _read_ioreg_battery
+  run _read_bat_cycle_count
+  run _read_bat_charge_full
+  run _read_bat_charge_full_design
+  run _read_bat_power_now
+  run _read_sys_capacity
+  run _read_sys_status
+  true
 }

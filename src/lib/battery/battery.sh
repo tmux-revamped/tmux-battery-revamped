@@ -50,13 +50,38 @@ battery_watts_from_profiler() {
   printf '%s\n' "${1}" | grep -i "Wattage" | grep -oE '[0-9]+' | head -1
 }
 
+# bat_ioreg_field TEXT KEY -> the integer value for an ioreg AppleSmartBattery key.
+bat_ioreg_field() {
+  printf '%s\n' "${1}" | awk -F' = ' -v k="\"${2}\"" '$0 ~ k { gsub(/[^0-9]/, "", $2); print $2; exit }'
+}
+
+# bat_health_pct MAX DESIGN -> battery health percent, clamped to 100.
+bat_health_pct() {
+  [[ "${1}" =~ ^[0-9]+$ && "${2}" =~ ^[0-9]+$ && "${2}" -gt 0 ]] || { echo ""; return 0; }
+  local h=$(( ${1} * 100 / ${2} ))
+  (( h > 100 )) && h=100
+  echo "${h}"
+}
+
 # Host-probe seams.
 _read_pmset() { pmset -g batt 2>/dev/null; }
 _read_sys_capacity() { cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -1; }
 _read_sys_status() { cat /sys/class/power_supply/BAT*/status 2>/dev/null | head -1; }
 _read_acpi() { acpi -b 2>/dev/null | head -1; }
 _read_profiler() { system_profiler SPPowerDataType 2>/dev/null; }
+_read_ioreg_battery() { ioreg -r -c AppleSmartBattery 2>/dev/null; }
 _sys_battery_present() { compgen -G "/sys/class/power_supply/BAT*/capacity" >/dev/null 2>&1; }
+
+_read_bat_sys() {
+  local name="${1}" base
+  for base in /sys/class/power_supply/BAT1 /sys/class/power_supply/BAT0; do
+    [[ -r "${base}/${name}" ]] && { cat "${base}/${name}" 2>/dev/null; return 0; }
+  done
+}
+_read_bat_cycle_count() { _read_bat_sys cycle_count; }
+_read_bat_charge_full() { _read_bat_sys charge_full; }
+_read_bat_charge_full_design() { _read_bat_sys charge_full_design; }
+_read_bat_power_now() { _read_bat_sys power_now; }
 
 read_battery_percentage() {
   if is_macos; then
@@ -93,9 +118,37 @@ read_battery_remain() {
 read_battery_watts() {
   if is_macos; then
     battery_watts_from_profiler "$(_read_profiler)"
+  elif is_linux; then
+    local p
+    p=$(_read_bat_power_now)
+    [[ "${p}" =~ ^[0-9]+$ ]] && echo $(( p / 1000000 ))
   fi
 }
 
+# read_battery_cycles -> charge cycle count, empty when unavailable.
+read_battery_cycles() {
+  if is_macos; then
+    bat_ioreg_field "$(_read_ioreg_battery)" CycleCount
+  elif is_linux; then
+    local c
+    c=$(_read_bat_cycle_count)
+    [[ "${c}" =~ ^[0-9]+$ ]] && echo "${c}"
+  fi
+}
+
+# read_battery_health -> battery health percent, empty when unavailable.
+read_battery_health() {
+  if is_macos; then
+    local d
+    d=$(_read_ioreg_battery)
+    bat_health_pct "$(bat_ioreg_field "${d}" MaxCapacity)" "$(bat_ioreg_field "${d}" DesignCapacity)"
+  elif is_linux; then
+    bat_health_pct "$(_read_bat_charge_full)" "$(_read_bat_charge_full_design)"
+  fi
+}
+
+export -f bat_ioreg_field
+export -f bat_health_pct
 export -f battery_norm_status
 export -f battery_pct_from_pmset
 export -f battery_status_from_pmset
@@ -106,8 +159,16 @@ export -f _read_sys_capacity
 export -f _read_sys_status
 export -f _read_acpi
 export -f _read_profiler
+export -f _read_ioreg_battery
 export -f _sys_battery_present
+export -f _read_bat_sys
+export -f _read_bat_cycle_count
+export -f _read_bat_charge_full
+export -f _read_bat_charge_full_design
+export -f _read_bat_power_now
 export -f read_battery_percentage
 export -f read_battery_status
 export -f read_battery_remain
 export -f read_battery_watts
+export -f read_battery_cycles
+export -f read_battery_health

@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-06-20
+
+### Added
+
+- Charge cycle count `#{battery_cycles}` and battery health `#{battery_health}`,
+  from ioreg on macOS (works on Apple Silicon) and /sys on Linux.
+- Discharging/charging watts on Linux via power_now.
+
 ## [1.0.0] - 2026-06-19
 
 ### Added
