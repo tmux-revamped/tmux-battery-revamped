@@ -4,6 +4,7 @@
 #
 # Replaces the #{battery_*} placeholders in status-left and status-right with
 # calls to the dispatcher, which reads cached values and never blocks the render.
+# Also binds a key to the detail popup.
 
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BAT_CMD="${PLUGIN_DIR}/src/battery.sh"
@@ -24,6 +25,11 @@ placeholders=(
   "\#{battery_charging_watts}"
   "\#{battery_cycles}"
   "\#{battery_health}"
+  "\#{battery_drain_rate}"
+  "\#{battery_estimate}"
+  "\#{battery_sparkline}"
+  "\#{battery_power_source}"
+  "\#{battery_alert_icon}"
 )
 
 commands=(
@@ -42,6 +48,11 @@ commands=(
   "#(${BAT_CMD} charging_watts)"
   "#(${BAT_CMD} cycles)"
   "#(${BAT_CMD} health)"
+  "#(${BAT_CMD} drain_rate)"
+  "#(${BAT_CMD} estimate)"
+  "#(${BAT_CMD} sparkline)"
+  "#(${BAT_CMD} power_source)"
+  "#(${BAT_CMD} alert_icon)"
 )
 
 interpolate() {
@@ -60,7 +71,15 @@ update_option() {
   tmux set-option -gq "${option}" "$(interpolate "${current}")"
 }
 
+bind_popup() {
+  local key
+  key=$(tmux show-option -gqv "@battery_revamped_popup_key")
+  [[ -z "${key}" ]] && key="B"
+  tmux bind-key "${key}" run-shell "${BAT_CMD} popup"
+}
+
 chmod +x "${BAT_CMD}" 2>/dev/null || true
 
 update_option "status-left"
 update_option "status-right"
+bind_popup

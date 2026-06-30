@@ -4,11 +4,11 @@
 
 **Battery status for your tmux status bar, without ever blocking the status render.**
 
-[![Tests](https://github.com/tmux-revamped/tmux-battery-revamped/actions/workflows/tests.yml/badge.svg)](https://github.com/tmux-revamped/tmux-battery-revamped/actions/workflows/tests.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](CHANGELOG.md)
+[![Tests](https://github.com/tmux-revamped/tmux-battery-revamped/actions/workflows/tests.yml/badge.svg)](https://github.com/tmux-revamped/tmux-battery-revamped/actions/workflows/tests.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](CHANGELOG.md)
 
 </div>
 
-**15** placeholders · **2** platforms · **104** tests · **95%+** coverage
+**20** placeholders · **2** platforms · **177** tests · **95%+** coverage
 
 Battery probes like `pmset` and `upower` are slow enough to stutter a status bar that queries them inline, and the classic approach fans out a dozen of them per refresh. This plugin queries once in a detached background worker, caches the result in tmux server user-options, and serves every placeholder from that cache. No temp files are used.
 
@@ -21,7 +21,7 @@ Inspired by [tmux-battery](https://github.com/tmux-plugins/tmux-battery). Built 
 </tr>
 <tr>
 <td><b>Cross-platform</b><br/>Works on Linux and macOS, across Intel and Apple Silicon.</td>
-<td><b>Tested</b><br/>104 tests hold the behavior at 95%+ coverage.</td>
+<td><b>Tested</b><br/>177 tests hold the behavior at 95%+ coverage.</td>
 </tr>
 </table>
 
@@ -41,6 +41,11 @@ Inspired by [tmux-battery](https://github.com/tmux-plugins/tmux-battery). Built 
 | `#{battery_charging_watts}` | charging or discharging watts |
 | `#{battery_cycles}` | charge cycle count |
 | `#{battery_health}` | battery health, for example `96%` |
+| `#{battery_drain_rate}` | drain rate in percent per hour, for example `12.5%/h` |
+| `#{battery_estimate}` | acpi-free remaining-time estimate, for example `2:00` |
+| `#{battery_sparkline}` | charge-history sparkline from a bounded ring buffer |
+| `#{battery_power_source}` | `AC` or `Bat` |
+| `#{battery_alert_icon}` | a glyph when discharging at a low or critical level |
 
 ## Install
 
@@ -71,6 +76,31 @@ Press `prefix + I` to install.
 | `@battery_revamped_cycles_format` | `%s` | format for the cycle count |
 | `@battery_revamped_health_format` | `%s%%` | format for battery health |
 | `@battery_revamped_enable_logging` | `0` | set to `1` to log under `~/.tmux/battery-revamped-logs` |
+| `@battery_revamped_low_threshold` | `20` | discharging percent treated as low |
+| `@battery_revamped_critical_threshold` | `10` | discharging percent treated as critical |
+| `@battery_revamped_low_icon` / `@battery_revamped_critical_icon` | empty | alert glyphs for `#{battery_alert_icon}` |
+| `@battery_revamped_drain_rate_format` | `%s%%/h` | format for the drain rate |
+| `@battery_revamped_history_size` | `16` | readings kept in the sparkline ring |
+| `@battery_revamped_source_ac_label` / `@battery_revamped_source_battery_label` | `AC` / `Bat` | power-source labels |
+| `@battery_revamped_notify` | `0` | set to `1` for one-shot low/critical/full desktop notifications |
+| `@battery_revamped_popup_key` | `B` | prefix key that opens the detail popup |
+| `@battery_revamped_popup_width` / `@battery_revamped_popup_height` | `44` / `12` | detail popup size |
+
+## Notifications, popup, and doctor
+
+Desktop notifications are off by default. Set `@battery_revamped_notify` to `1` to get one alert each time the charge crosses into low, critical, or full while discharging or charging. Each crossing fires once: the alert will not repeat until the level changes and crosses again. macOS uses `osascript`, Linux uses `notify-send`.
+
+```tmux
+set -g @battery_revamped_notify '1'
+```
+
+Press `prefix + B` to open a detail popup built from the cached values, with no re-probing. Rebind it with `@battery_revamped_popup_key`.
+
+Run the dispatcher with `doctor` to see which sources this host exposes:
+
+```sh
+./src/battery.sh doctor
+```
 
 ## Theme color suggestions
 

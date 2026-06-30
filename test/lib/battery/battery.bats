@@ -220,7 +220,11 @@ teardown() {
   [[ "$(read_battery_health)" == "90" ]]
 }
 
-@test "battery.sh - host-probe seams are callable" {
+@test "battery.sh - host-probe seams run through stubbed binaries" {
+  pmset() { echo "stub"; }
+  acpi() { echo "stub"; }
+  system_profiler() { echo "stub"; }
+  ioreg() { echo "stub"; }
   run _read_pmset
   run _read_acpi
   run _read_profiler
