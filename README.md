@@ -83,7 +83,7 @@ Press `prefix + I` to install.
 | `@battery_revamped_history_size` | `16` | readings kept in the sparkline ring |
 | `@battery_revamped_source_ac_label` / `@battery_revamped_source_battery_label` | `AC` / `Bat` | power-source labels |
 | `@battery_revamped_notify` | `0` | set to `1` for one-shot low/critical/full desktop notifications |
-| `@battery_revamped_popup_key` | `B` | prefix key that opens the detail popup |
+| `@battery_revamped_popup_key` | `M-b` | prefix key that opens the detail popup |
 | `@battery_revamped_popup_width` / `@battery_revamped_popup_height` | `44` / `12` | detail popup size |
 
 ## Notifications, popup, and doctor
@@ -94,7 +94,7 @@ Desktop notifications are off by default. Set `@battery_revamped_notify` to `1` 
 set -g @battery_revamped_notify '1'
 ```
 
-Press `prefix + B` to open a detail popup built from the cached values, with no re-probing. Rebind it with `@battery_revamped_popup_key`.
+Press `prefix + M-b` to open a detail popup built from the cached values, with no re-probing. Rebind it with `@battery_revamped_popup_key`.
 
 Run the dispatcher with `doctor` to see which sources this host exposes:
 

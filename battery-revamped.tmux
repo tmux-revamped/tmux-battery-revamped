@@ -74,7 +74,7 @@ update_option() {
 bind_popup() {
   local key
   key=$(tmux show-option -gqv "@battery_revamped_popup_key")
-  [[ -z "${key}" ]] && key="B"
+  [[ -z "${key}" ]] && key="M-b"
   tmux bind-key "${key}" run-shell "${BAT_CMD} popup"
 }
 
