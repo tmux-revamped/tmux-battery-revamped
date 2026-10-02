@@ -202,3 +202,58 @@ teardown() {
   run main color_status_bg
   [[ "${output}" == "SBG" ]]
 }
+
+@test "battery.sh dispatcher - a metric renders without a label by default" {
+  run battery_labelled percentage "42"
+
+  [[ "${output}" == "42" ]]
+}
+
+@test "battery.sh dispatcher - the nerd icon set labels a metric" {
+  set_tmux_option "@battery_revamped_icons" "nerd"
+
+  run battery_labelled percentage "42"
+
+  [[ "${output}" == $'\xf3\xb0\x81\xb9'" 42" ]]
+}
+
+@test "battery.sh dispatcher - a set label beats the icon set" {
+  set_tmux_option "@battery_revamped_icons" "nerd"
+  set_tmux_option "@battery_revamped_percentage_label" "X"
+
+  run battery_labelled percentage "42"
+
+  [[ "${output}" == "X 42" ]]
+}
+
+@test "battery.sh dispatcher - an empty label removes the icon set's label" {
+  set_tmux_option "@battery_revamped_icons" "nerd"
+  battery_option_exists() { [[ "${1}" == "@battery_revamped_percentage_label" ]]; }
+
+  run battery_labelled percentage "42"
+
+  [[ "${output}" == "42" ]]
+}
+
+@test "battery.sh dispatcher - an empty value renders nothing even with a label" {
+  set_tmux_option "@battery_revamped_icons" "nerd"
+
+  run battery_labelled percentage ""
+
+  [ -z "${output}" ]
+}
+
+@test "battery.sh dispatcher - only value metrics carry a label" {
+  run battery_is_labelled fg_color
+
+  [ "${status}" -eq 1 ]
+}
+
+@test "battery.sh dispatcher - main labels a rendered metric" {
+  set_tmux_option "@battery_revamped_icons" "nerd"
+  battery_render_metric() { echo "42"; }
+
+  run main percentage
+
+  [[ "${output}" == $'\xf3\xb0\x81\xb9'" 42" ]]
+}

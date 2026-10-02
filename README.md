@@ -102,6 +102,23 @@ Run the dispatcher with `doctor` to see which sources this host exposes:
 ./src/battery.sh doctor
 ```
 
+## Labels
+
+Every value placeholder can carry a label, an icon or word printed before the value only when the value is not empty, so each figure on the bar says what it is. Set `@battery_revamped_<metric>_label` for one metric, or `@battery_revamped_icons` to `nerd` to label every metric from a Nerd Font set. A metric's own label wins over the set, and setting it to `''` removes the set's label for that metric. The default, `ascii`, adds no labels, so existing bars render unchanged.
+
+| Metric | `nerd` glyph |
+|--------|--------------|
+| `percentage` | U+F0079 |
+| `graph` | U+F07B1 |
+| `remain` | U+F051F |
+| `charging_watts` | U+F0241 |
+| `cycles` | U+F04E6 |
+| `health` | U+F05F6 |
+| `drain_rate` | U+F0533 |
+| `estimate` | U+F051F |
+| `sparkline` | U+F07B1 |
+| `power_source` | U+F06A5 |
+
 ## Theme color suggestions
 
 The defaults use 16 ANSI color names that the active terminal theme remaps, so the plugin matches any theme out of the box. For exact hex values, copy one block below into your `.tmux.conf`. Each block colors the low charge tiers red, the middle tiers yellow, and the high tiers green, then colors the status states to match.

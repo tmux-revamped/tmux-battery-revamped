@@ -87,18 +87,8 @@ battery_alert_token() {
       "$(battery_low_threshold)" "$(battery_critical_threshold)")"
 }
 
-main() {
-  local cmd="${1:-}"
-
-  case "${cmd}" in
-    refresh)    battery_refresh; return 0 ;;
-    popup)      battery_show_popup; return 0 ;;
-    popup-card) battery_popup_card; return 0 ;;
-    doctor)     battery_doctor; return 0 ;;
-  esac
-
-  battery_tick
-
+battery_render_metric() {
+  local cmd="${1}"
   case "${cmd}" in
     percentage)      battery_render_percentage "$(cache_get percent)" ;;
     icon)            battery_charge_icon "$(cache_get percent)" ;;
@@ -122,6 +112,74 @@ main() {
     alert_icon)      battery_alert_token ;;
     *)               return 0 ;;
   esac
+}
+
+battery_is_labelled() {
+  case "${1}" in
+    percentage | graph | remain | charging_watts | cycles | health | drain_rate | estimate | sparkline | power_source) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+battery_nerd_label() {
+  case "${1}" in
+    percentage) printf '\xf3\xb0\x81\xb9' ;;
+    graph) printf '\xf3\xb0\x9e\xb1' ;;
+    remain) printf '\xf3\xb0\x94\x9f' ;;
+    charging_watts) printf '\xf3\xb0\x89\x81' ;;
+    cycles) printf '\xf3\xb0\x93\xa6' ;;
+    health) printf '\xf3\xb0\x97\xb6' ;;
+    drain_rate) printf '\xf3\xb0\x94\xb3' ;;
+    estimate) printf '\xf3\xb0\x94\x9f' ;;
+    sparkline) printf '\xf3\xb0\x9e\xb1' ;;
+    power_source) printf '\xf3\xb0\x9a\xa5' ;;
+    *) printf '' ;;
+  esac
+}
+
+battery_option_exists() {
+  [[ -n "$(tmux show-option -gq "${1}" 2>/dev/null)" ]]
+}
+
+battery_label() {
+  local option="@battery_revamped_${1}_label"
+  if battery_option_exists "${option}"; then
+    tmux show-option -gqv "${option}" 2>/dev/null
+  elif [[ "$(get_tmux_option "@battery_revamped_icons" "ascii")" == "nerd" ]]; then
+    battery_nerd_label "${1}"
+  fi
+}
+
+battery_labelled() {
+  local metric="${1}" value="${2}" label
+  [[ -n "${value}" ]] || return 0
+  label="$(battery_label "${metric}")"
+  if [[ -n "${label}" ]]; then
+    printf '%s %s\n' "${label}" "${value}"
+  else
+    printf '%s\n' "${value}"
+  fi
+}
+
+main() {
+  local cmd="${1:-}"
+
+  case "${cmd}" in
+    refresh)    battery_refresh; return 0 ;;
+    popup)      battery_show_popup; return 0 ;;
+    popup-card) battery_popup_card; return 0 ;;
+    doctor)     battery_doctor; return 0 ;;
+  esac
+
+  battery_tick
+
+  local out
+  out="$(battery_render_metric "${cmd}")"
+  if battery_is_labelled "${cmd}"; then
+    battery_labelled "${cmd}" "${out}"
+  elif [[ -n "${out}" ]]; then
+    printf '%s\n' "${out}"
+  fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
