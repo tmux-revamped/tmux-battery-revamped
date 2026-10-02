@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `@battery_revamped_hide_on_ac`. Set to `1`, every placeholder renders
+  nothing while the machine is on AC power.
+- `@battery_revamped_before` and `@battery_revamped_after`, placed around the
+  percentage only when it renders, so a theme pill disappears with it.
 - Metric labels. `@battery_revamped_<metric>_label` prints an icon or word before a value
   only when the value is not empty, and `@battery_revamped_icons` set to `nerd` labels
   every metric from a Nerd Font set. The default adds no labels.

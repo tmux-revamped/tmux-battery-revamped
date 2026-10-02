@@ -257,3 +257,59 @@ teardown() {
 
   [[ "${output}" == $'\xf3\xb0\x81\xb9'" 42" ]]
 }
+
+@test "battery.sh dispatcher - hide on AC renders nothing while plugged in" {
+  set_tmux_option "@battery_revamped_hide_on_ac" "1"
+  cache_get() { [[ "${1}" == "status" ]] && echo "charging"; }
+
+  run battery_hidden_on_ac
+
+  [ "${status}" -eq 0 ]
+}
+
+@test "battery.sh dispatcher - hide on AC still renders on battery power" {
+  set_tmux_option "@battery_revamped_hide_on_ac" "1"
+  cache_get() { [[ "${1}" == "status" ]] && echo "discharging"; }
+
+  run battery_hidden_on_ac
+
+  [ "${status}" -eq 1 ]
+}
+
+@test "battery.sh dispatcher - nothing is hidden by default" {
+  cache_get() { [[ "${1}" == "status" ]] && echo "charging"; }
+
+  run battery_hidden_on_ac
+
+  [ "${status}" -eq 1 ]
+}
+
+@test "battery.sh dispatcher - main renders nothing on AC when hiding" {
+  set_tmux_option "@battery_revamped_hide_on_ac" "1"
+  battery_tick() { :; }
+  cache_get() { [[ "${1}" == "status" ]] && echo "charged"; }
+  battery_render_metric() { echo "80%"; }
+
+  run main percentage
+
+  [ -z "${output}" ]
+}
+
+@test "battery.sh dispatcher - the percentage is wrapped when set" {
+  set_tmux_option "@battery_revamped_before" "<<"
+  set_tmux_option "@battery_revamped_after" ">>"
+  battery_tick() { :; }
+  battery_render_metric() { echo "80%"; }
+
+  run main percentage
+
+  [[ "${output}" == "<<80%>>" ]]
+}
+
+@test "battery.sh dispatcher - an empty percentage is not wrapped" {
+  set_tmux_option "@battery_revamped_before" "<<"
+
+  run battery_wrap ""
+
+  [ -z "${output}" ]
+}

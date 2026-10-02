@@ -87,6 +87,17 @@ battery_alert_token() {
       "$(battery_low_threshold)" "$(battery_critical_threshold)")"
 }
 
+battery_hidden_on_ac() {
+  [[ "$(get_tmux_option "@battery_revamped_hide_on_ac" "0")" == "1" ]] || return 1
+  [[ "$(cache_get status)" != "discharging" ]]
+}
+
+battery_wrap() {
+  local out="${1}"
+  [[ -n "${out}" ]] || return 0
+  printf '%s%s%s' "$(get_tmux_option "@battery_revamped_before" "")" "${out}" "$(get_tmux_option "@battery_revamped_after" "")"
+}
+
 battery_render_metric() {
   local cmd="${1}"
   case "${cmd}" in
@@ -173,8 +184,11 @@ main() {
 
   battery_tick
 
+  battery_hidden_on_ac && return 0
+
   local out
   out="$(battery_render_metric "${cmd}")"
+  [[ "${cmd}" == "percentage" ]] && out="$(battery_wrap "${out}")"
   if battery_is_labelled "${cmd}"; then
     battery_labelled "${cmd}" "${out}"
   elif [[ -n "${out}" ]]; then
