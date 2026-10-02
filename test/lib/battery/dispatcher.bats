@@ -313,3 +313,52 @@ teardown() {
 
   [ -z "${output}" ]
 }
+
+@test "battery.sh dispatcher - the nerd set picks the charge level glyph" {
+  set_tmux_option "@battery_revamped_icons" "nerd"
+
+  run battery_charge_icon 79 discharging
+
+  [[ "${output}" == $'\xf3\xb0\x82\x81' ]]
+}
+
+@test "battery.sh dispatcher - the nerd set picks the charging glyph while charging" {
+  set_tmux_option "@battery_revamped_icons" "nerd"
+
+  run battery_charge_icon 79 charging
+
+  [[ "${output}" == $'\xf3\xb0\x82\x8a' ]]
+}
+
+@test "battery.sh dispatcher - a tier icon option beats the nerd set" {
+  set_tmux_option "@battery_revamped_icons" "nerd"
+  set_tmux_option "@battery_revamped_charge_tier7_icon" "B7"
+
+  run battery_charge_icon 79 discharging
+
+  [[ "${output}" == "B7" ]]
+}
+
+@test "battery.sh dispatcher - the color value comes out of an fg style" {
+  run battery_color_value "#[fg=#a6e3a1]"
+
+  [[ "${output}" == "#a6e3a1" ]]
+}
+
+@test "battery.sh dispatcher - a bare color passes through" {
+  run battery_color_value "green"
+
+  [[ "${output}" == "green" ]]
+}
+
+@test "battery.sh dispatcher - the wrapper fills the icon and color tokens" {
+  set_tmux_option "@battery_revamped_before" "[{color}|{icon}]"
+  set_tmux_option "@battery_revamped_after" "<{color}>"
+  set_tmux_option "@battery_revamped_charge_tier7_icon" "B7"
+  set_tmux_option "@battery_revamped_charge_tier7_fg_color" "#[fg=#a6e3a1]"
+  cache_get() { case "${1}" in percent) echo "79" ;; status) echo "discharging" ;; esac; }
+
+  run battery_wrap "79%"
+
+  [[ "${output}" == "[#a6e3a1|B7]79%<#a6e3a1>" ]]
+}

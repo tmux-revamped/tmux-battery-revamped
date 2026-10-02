@@ -83,7 +83,8 @@ Press `prefix + I` to install.
 | `@battery_revamped_history_size` | `16` | readings kept in the sparkline ring |
 | `@battery_revamped_source_ac_label` / `@battery_revamped_source_battery_label` | `AC` / `Bat` | power-source labels |
 | `@battery_revamped_hide_on_ac` | `0` | set to `1` to render nothing while the machine is on AC power, so the battery shows only when it is running on battery |
-| `@battery_revamped_before` / `@battery_revamped_after` | empty | formats placed around `#{battery_percentage}` only when it renders, for example a theme's pill opening and closing |
+| `@battery_revamped_before` / `@battery_revamped_after` | empty | formats placed around `#{battery_percentage}` only when it renders, for example a theme's pill opening and closing; `{icon}` becomes the current charge icon and `{color}` the current charge tier color, so the pill can follow the charge |
+| `@battery_revamped_icons` | `ascii` | set to `nerd` for Nerd Font battery-level glyphs on the eight charge tiers, with charging variants while charging; a tier icon option still overrides it |
 | `@battery_revamped_notify` | `0` | set to `1` for one-shot low/critical/full desktop notifications |
 | `@battery_revamped_popup_key` | `M-b` | prefix key that opens the detail popup |
 | `@battery_revamped_popup_width` / `@battery_revamped_popup_height` | `44` / `12` | detail popup size |

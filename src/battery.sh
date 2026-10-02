@@ -93,17 +93,27 @@ battery_hidden_on_ac() {
 }
 
 battery_wrap() {
-  local out="${1}"
+  local out="${1}" percent status icon color before after
   [[ -n "${out}" ]] || return 0
-  printf '%s%s%s' "$(get_tmux_option "@battery_revamped_before" "")" "${out}" "$(get_tmux_option "@battery_revamped_after" "")"
+  percent="$(cache_get percent)"
+  status="$(cache_get status)"
+  icon="$(battery_charge_icon "${percent}" "${status}")"
+  color="$(battery_color_value "$(battery_charge_color "${percent}" fg)")"
+  before="$(get_tmux_option "@battery_revamped_before" "")"
+  after="$(get_tmux_option "@battery_revamped_after" "")"
+  before="${before//\{icon\}/${icon}}"
+  before="${before//\{color\}/${color}}"
+  after="${after//\{icon\}/${icon}}"
+  after="${after//\{color\}/${color}}"
+  printf '%s%s%s' "${before}" "${out}" "${after}"
 }
 
 battery_render_metric() {
   local cmd="${1}"
   case "${cmd}" in
     percentage)      battery_render_percentage "$(cache_get percent)" ;;
-    icon)            battery_charge_icon "$(cache_get percent)" ;;
-    icon_charge)     battery_charge_icon "$(cache_get percent)" ;;
+    icon)            battery_charge_icon "$(cache_get percent)" "$(cache_get status)" ;;
+    icon_charge)     battery_charge_icon "$(cache_get percent)" "$(cache_get status)" ;;
     icon_status)     battery_status_icon "$(cache_get status)" ;;
     color_fg)        battery_status_color "$(cache_get status)" fg ;;
     color_bg)        battery_status_color "$(cache_get status)" bg ;;

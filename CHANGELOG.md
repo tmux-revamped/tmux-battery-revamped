@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `{icon}` and `{color}` tokens in `@battery_revamped_before` and
+  `@battery_revamped_after`, filled with the current charge icon and tier
+  color, so a pill drawn around the percentage follows the charge.
+- Nerd Font battery-level glyphs for the eight charge tiers under
+  `@battery_revamped_icons nerd`, with charging variants while charging.
 - `@battery_revamped_hide_on_ac`. Set to `1`, every placeholder renders
   nothing while the machine is on AC power.
 - `@battery_revamped_before` and `@battery_revamped_after`, placed around the

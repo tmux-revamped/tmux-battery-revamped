@@ -21,11 +21,50 @@ battery_tier() {
   echo "${t}"
 }
 
+battery_nerd_tier_icon() {
+  if [[ "${2:-}" == "charging" ]]; then
+    case "${1}" in
+    1) printf '\xf3\xb0\xa2\x9c' ;;
+    2) printf '\xf3\xb0\x82\x86' ;;
+    3) printf '\xf3\xb0\x82\x87' ;;
+    4) printf '\xf3\xb0\x82\x88' ;;
+    5) printf '\xf3\xb0\x82\x89' ;;
+    6) printf '\xf3\xb0\xa2\x9e' ;;
+    7) printf '\xf3\xb0\x82\x8a' ;;
+    8) printf '\xf3\xb0\x82\x85' ;;
+    esac
+    return 0
+  fi
+  case "${1}" in
+    1) printf '\xf3\xb0\x81\xba' ;;
+    2) printf '\xf3\xb0\x81\xbb' ;;
+    3) printf '\xf3\xb0\x81\xbc' ;;
+    4) printf '\xf3\xb0\x81\xbd' ;;
+    5) printf '\xf3\xb0\x81\xbf' ;;
+    6) printf '\xf3\xb0\x82\x80' ;;
+    7) printf '\xf3\xb0\x82\x81' ;;
+    8) printf '\xf3\xb0\x81\xb9' ;;
+  esac
+}
+
 battery_charge_icon() {
   [[ -z "${1}" ]] && { echo ""; return 0; }
-  local tier
+  local tier fallback
   tier=$(battery_tier "${1}")
-  get_tmux_option "@battery_revamped_charge_tier${tier}_icon" "${_DEFAULT_TIER_ICONS[tier]}"
+  fallback="${_DEFAULT_TIER_ICONS[tier]}"
+  if [[ "$(get_tmux_option "@battery_revamped_icons" "ascii")" == "nerd" ]]; then
+    fallback="$(battery_nerd_tier_icon "${tier}" "${2:-}")"
+  fi
+  get_tmux_option "@battery_revamped_charge_tier${tier}_icon" "${fallback}"
+}
+
+battery_color_value() {
+  local style="${1}"
+  if [[ "${style}" =~ ^\#\[fg=(.*)\]$ ]]; then
+    printf '%s' "${BASH_REMATCH[1]}"
+  else
+    printf '%s' "${style}"
+  fi
 }
 
 battery_charge_color() {
@@ -113,6 +152,8 @@ export -f battery_render_cycles
 export -f battery_render_health
 export -f battery_tier
 export -f battery_charge_icon
+export -f battery_nerd_tier_icon
+export -f battery_color_value
 export -f battery_charge_color
 export -f battery_status_icon
 export -f battery_status_color
