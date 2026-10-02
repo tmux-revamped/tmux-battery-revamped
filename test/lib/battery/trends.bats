@@ -131,3 +131,10 @@ teardown() {
   set_tmux_option "@battery_revamped_source_battery_label" "DC"
   [[ "$(battery_power_source discharging)" == "DC" ]]
 }
+
+@test "battery - a comma-decimal locale still formats with a dot" {
+  locale -a 2>/dev/null | grep -qiE '^pt_BR\.utf-?8$' || skip "the pt_BR.UTF-8 locale is not installed"
+  LC_ALL=pt_BR.UTF-8 LC_NUMERIC=pt_BR.UTF-8 run battery_drain_rate 80 0 79 3600
+
+  [[ "${output}" == "1.0" ]]
+}
