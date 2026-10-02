@@ -362,3 +362,24 @@ teardown() {
 
   [[ "${output}" == "[#a6e3a1|B7]79%<#a6e3a1>" ]]
 }
+
+@test "battery.sh dispatcher - every discharging tier has a nerd glyph" {
+  local tier
+  for tier in 1 2 3 4 5 6 7 8; do
+    [[ -n "$(battery_nerd_tier_icon "${tier}" discharging)" ]] || { echo "no glyph for tier ${tier}"; return 1; }
+  done
+}
+
+@test "battery.sh dispatcher - every charging tier has a charging glyph" {
+  local tier
+  for tier in 1 2 3 4 5 6 7 8; do
+    [[ -n "$(battery_nerd_tier_icon "${tier}" charging)" ]] || { echo "no glyph for tier ${tier}"; return 1; }
+    [[ "$(battery_nerd_tier_icon "${tier}" charging)" != "$(battery_nerd_tier_icon "${tier}" discharging)" ]] || { echo "tier ${tier} charging glyph equals its level glyph"; return 1; }
+  done
+}
+
+@test "battery.sh dispatcher - an empty percentage has no charge icon" {
+  run battery_charge_icon "" discharging
+
+  [ -z "${output}" ]
+}
