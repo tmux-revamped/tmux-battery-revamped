@@ -28,7 +28,7 @@ battery_drain_rate() {
   [[ "${pp}" =~ ^[0-9]+$ && "${pt}" =~ ^[0-9]+$ && "${cp}" =~ ^[0-9]+$ && "${ct}" =~ ^[0-9]+$ ]] || { echo ""; return 0; }
   local dt=$(( ct - pt ))
   (( dt > 0 )) || { echo ""; return 0; }
-  awk -v a="${pp}" -v b="${cp}" -v d="${dt}" 'BEGIN { printf "%.1f", (a - b) * 3600 / d }'
+  LC_ALL=C awk -v a="${pp}" -v b="${cp}" -v d="${dt}" 'BEGIN { printf "%.1f", (a - b) * 3600 / d }'
 }
 
 # battery_render_drain_rate VALUE -> formatted drain rate, empty when no value.

@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   only when the value is not empty, and `@battery_revamped_icons` set to `nerd` labels
   every metric from a Nerd Font set. The default adds no labels.
 
+### Fixed
+
+- A comma-decimal locale such as pt_BR printed the drain rate as `1,0`. The
+  arithmetic now runs under the C locale.
+
 ## [1.3.0] - 2026-06-30
 
 ### Added
