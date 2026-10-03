@@ -80,9 +80,10 @@ interpolate() {
 used_metrics() {
   local text="${1}" used="" i metric
   for (( i = 0; i < ${#placeholders[@]}; i++ )); do
-    if [[ "${text}" == *${placeholders[i]}* ]]; then
-      metric="${commands[i]##* }"
-      used="${used:+${used} }${metric%)}"
+    metric="${commands[i]##* }"
+    metric="${metric%)}"
+    if [[ "${text}" == *${placeholders[i]}* || "${text}" == *"@battery_revamped_out_${metric}}"* ]]; then
+      used="${used:+${used} }${metric}"
     fi
   done
   echo "${used}"
