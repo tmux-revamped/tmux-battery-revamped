@@ -49,6 +49,10 @@ battery_critical_threshold() {
   get_tmux_option "@battery_revamped_critical_threshold" "10"
 }
 
+battery_detail_age() {
+  get_tmux_option "@battery_revamped_detail_interval" "60"
+}
+
 battery_refresh() {
   local now prev_pct prev_ts new_pct new_status
   now=$(_cache_now)
@@ -58,10 +62,10 @@ battery_refresh() {
   new_status=$(read_battery_status)
   cache_set percent "${new_pct}"
   cache_set status "${new_status}"
-  cache_set remain "$(read_battery_remain)"
-  cache_set watts "$(read_battery_watts)"
-  cache_set cycles "$(read_battery_cycles)"
-  cache_set health "$(read_battery_health)"
+  cache_set_if_stale remain "$(battery_detail_age)" read_battery_remain
+  cache_set_if_stale watts "$(battery_detail_age)" read_battery_watts
+  cache_set_if_stale cycles "$(battery_detail_age)" read_battery_cycles
+  cache_set_if_stale health "$(battery_detail_age)" read_battery_health
   set_tmux_option "@${CACHE_PREFIX}_snap_ts" "${now}"
 
   local rate
@@ -222,7 +226,7 @@ battery_publish() {
 _battery_reexec() { exec "${PLUGIN_DIR}/src/battery.sh" daemon; }
 
 battery_daemon() {
-  if ticker_run battery_revamped battery_publish "$$"; then
+  if ticker_run battery_revamped battery_publish "$$" 15; then
     _battery_reexec
   fi
 }

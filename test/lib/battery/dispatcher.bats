@@ -451,3 +451,22 @@ teardown() {
 
   [ ! -f "${TEST_TMPDIR}/daemon" ]
 }
+
+@test "battery dispatcher - a detail probe keeps its cache inside the detail interval" {
+  battery_refresh
+  read_battery_cycles() { echo "probed" > "${TEST_TMPDIR}/probed"; echo "fresh"; }
+
+  battery_refresh
+
+  [ ! -f "${TEST_TMPDIR}/probed" ]
+}
+
+@test "battery dispatcher - a detail probe runs again after the detail interval" {
+  battery_refresh
+  read_battery_cycles() { echo "fresh"; }
+  export MOCK_EPOCH=$(( MOCK_EPOCH + 61 ))
+
+  battery_refresh
+
+  [[ "$(cache_get cycles)" == "fresh" ]]
+}

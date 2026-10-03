@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `@battery_revamped_render 'options'` replaces the `#()` calls with tmux option
   reads, written by one background process per server every
-  `status-interval` seconds. tmux reruns a `#()` call on every redraw, so a
+  `@battery_revamped_interval` seconds, 15 by default. tmux reruns a `#()` call on every redraw, so a
   shared bar ran each one about once a second and painted values one by one.
 - `@battery_revamped_fixed_width 'on'` pads each value to its widest form, and
   `@battery_revamped_<metric>_width` sets one metric's width, so a value changing
@@ -28,6 +28,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Metric labels. `@battery_revamped_<metric>_label` prints an icon or word before a value
   only when the value is not empty, and `@battery_revamped_icons` set to `nerd` labels
   every metric from a Nerd Font set. The default adds no labels.
+
+### Changed
+
+- The options-mode background process reads every option it needs in one tmux
+  call per tick, sends its cache writes and published values in a second, and
+  keeps its functions out of the environment of the commands it runs.
+  Remaining time, wattage, cycles and health refresh every
+  `@battery_revamped_detail_interval` seconds, 60 by default, and options mode
+  ticks every `@battery_revamped_interval` seconds, 15 by default.
 
 ### Fixed
 

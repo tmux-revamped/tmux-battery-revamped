@@ -113,7 +113,7 @@ Set `@battery_revamped_fixed_width` to `on` to pad every value on the left to th
 
 ### Render mode
 
-By default each placeholder becomes a `#()` call, and tmux runs it on every status redraw, which can be about once a second when several plugins share the bar. Set `@battery_revamped_render` to `options` and each placeholder becomes a read of a tmux option instead, such as `#{E:@battery_revamped_out_percentage}`. One background process per server reads the battery every `status-interval` seconds, writes every value the status line uses in a single tmux call, and redraws once, so values change together and nothing renders empty while a job runs. The process exits after its current tick when the server stops, and a config reload replaces it.
+By default each placeholder becomes a `#()` call, and tmux runs it on every status redraw, which can be about once a second when several plugins share the bar. Set `@battery_revamped_render` to `options` and each placeholder becomes a read of a tmux option instead, such as `#{E:@battery_revamped_out_percentage}`. One background process per server reads the battery every `@battery_revamped_interval` seconds, 15 by default, writes every value the status line uses in a single tmux call, and redraws once, so values change together and nothing renders empty while a job runs. The process exits after its current tick when the server stops, and a config reload replaces it.
 
 ```tmux
 set -g @battery_revamped_render 'options'
