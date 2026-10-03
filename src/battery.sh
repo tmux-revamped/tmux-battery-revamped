@@ -115,8 +115,6 @@ battery_wrap() {
 battery_render_metric() {
   local cmd="${1}"
   case "${cmd}" in
-    start)      ticker_start "${PLUGIN_DIR}/src/battery.sh"; return 0 ;;
-    daemon)     battery_daemon; return 0 ;;
     percentage)      battery_render_percentage "$(cache_get percent)" ;;
     icon)            battery_charge_icon "$(cache_get percent)" "$(cache_get status)" ;;
     icon_charge)     battery_charge_icon "$(cache_get percent)" "$(cache_get status)" ;;
@@ -233,6 +231,8 @@ main() {
   local cmd="${1:-}"
 
   case "${cmd}" in
+    start) ticker_start "${PLUGIN_DIR}/src/battery.sh"; return 0 ;;
+    daemon) battery_daemon; return 0 ;;
     refresh)    battery_refresh; return 0 ;;
     popup)      battery_show_popup; return 0 ;;
     popup-card) battery_popup_card; return 0 ;;

@@ -443,3 +443,11 @@ teardown() {
 
   [[ "$(cat "${TEST_TMPDIR}/spawn")" == *"/src/battery.sh" ]]
 }
+
+@test "battery dispatcher - the metric renderer does not start the daemon" {
+  battery_daemon() { echo "daemon" > "${TEST_TMPDIR}/daemon"; }
+
+  battery_render_metric daemon >/dev/null
+
+  [ ! -f "${TEST_TMPDIR}/daemon" ]
+}
