@@ -23,6 +23,10 @@ source "${PLUGIN_DIR}/src/lib/tmux/tmux-ops.sh"
 # shellcheck source=/dev/null
 source "${PLUGIN_DIR}/src/lib/utils/cache.sh"
 # shellcheck source=/dev/null
+source "${PLUGIN_DIR}/src/lib/utils/publish.sh"
+# shellcheck source=/dev/null
+source "${PLUGIN_DIR}/src/lib/utils/ticker.sh"
+# shellcheck source=/dev/null
 source "${PLUGIN_DIR}/src/lib/battery/battery.sh"
 # shellcheck source=/dev/null
 source "${PLUGIN_DIR}/src/lib/battery/render.sh"
@@ -111,6 +115,8 @@ battery_wrap() {
 battery_render_metric() {
   local cmd="${1}"
   case "${cmd}" in
+    start)      ticker_start "${PLUGIN_DIR}/src/battery.sh"; return 0 ;;
+    daemon)     battery_daemon; return 0 ;;
     percentage)      battery_render_percentage "$(cache_get percent)" ;;
     icon)            battery_charge_icon "$(cache_get percent)" "$(cache_get status)" ;;
     icon_charge)     battery_charge_icon "$(cache_get percent)" "$(cache_get status)" ;;
@@ -171,14 +177,55 @@ battery_label() {
   fi
 }
 
+battery_natural_width() {
+  case "${1}" in
+    percentage) printf '4' ;;
+    *) printf '0' ;;
+  esac
+}
+
+battery_padded() {
+  publish_pad "${2}" "$(publish_width battery_revamped "${1}" "$(battery_natural_width "${1}")")"
+}
+
 battery_labelled() {
   local metric="${1}" value="${2}" label
   [[ -n "${value}" ]] || return 0
+  value="$(battery_padded "${metric}" "${value}")"
   label="$(battery_label "${metric}")"
   if [[ -n "${label}" ]]; then
     printf '%s %s\n' "${label}" "${value}"
   else
     printf '%s\n' "${value}"
+  fi
+}
+
+battery_output() {
+  local metric="${1}" out
+  battery_hidden_on_ac && return 0
+  out="$(battery_render_metric "${metric}")"
+  [[ "${metric}" == "percentage" ]] && out="$(battery_wrap "${out}")"
+  if battery_is_labelled "${metric}"; then
+    battery_labelled "${metric}" "${out}"
+  elif [[ -n "${out}" ]]; then
+    printf '%s\n' "${out}"
+  fi
+}
+
+battery_publish() {
+  local metric
+  battery_refresh
+  for metric in $(get_tmux_option "@battery_revamped_published" ""); do
+    publish_add "@battery_revamped_out_${metric}" "$(battery_output "${metric}")"
+  done
+  publish_commit
+}
+
+_battery_reexec() { exec "${PLUGIN_DIR}/src/battery.sh" daemon; }
+
+battery_daemon() {
+  if ticker_run battery_revamped battery_publish "$$"; then
+    _battery_reexec
   fi
 }
 
@@ -193,17 +240,7 @@ main() {
   esac
 
   battery_tick
-
-  battery_hidden_on_ac && return 0
-
-  local out
-  out="$(battery_render_metric "${cmd}")"
-  [[ "${cmd}" == "percentage" ]] && out="$(battery_wrap "${out}")"
-  if battery_is_labelled "${cmd}"; then
-    battery_labelled "${cmd}" "${out}"
-  elif [[ -n "${out}" ]]; then
-    printf '%s\n' "${out}"
-  fi
+  battery_output "${cmd}"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `@battery_revamped_render 'options'` replaces the `#()` calls with tmux option
+  reads, written by one background process per server every
+  `status-interval` seconds. tmux reruns a `#()` call on every redraw, so a
+  shared bar ran each one about once a second and painted values one by one.
+- `@battery_revamped_fixed_width 'on'` pads each value to its widest form, and
+  `@battery_revamped_<metric>_width` sets one metric's width, so a value changing
+  length no longer shifts the rest of the status line.
 - `{icon}` and `{color}` tokens in `@battery_revamped_before` and
   `@battery_revamped_after`, filled with the current charge icon and tier
   color, so a pill drawn around the percentage follows the charge.

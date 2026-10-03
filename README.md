@@ -109,6 +109,17 @@ Run the dispatcher with `doctor` to see which sources this host exposes:
 
 Every value placeholder can carry a label, an icon or word printed before the value only when the value is not empty, so each figure on the bar says what it is. Set `@battery_revamped_<metric>_label` for one metric, or `@battery_revamped_icons` to `nerd` to label every metric from a Nerd Font set. A metric's own label wins over the set, and setting it to `''` removes the set's label for that metric. The default, `ascii`, adds no labels, so existing bars render unchanged.
 
+Set `@battery_revamped_fixed_width` to `on` to pad every value on the left to the widest it can get, such as four characters for a percentage, so a value that changes length, like `9%` becoming `42%`, never shifts the rest of a right-aligned status line. `@battery_revamped_<metric>_width` sets one metric's width and wins over the fixed width. A longer value is never cut. Both are off by default.
+
+### Render mode
+
+By default each placeholder becomes a `#()` call, and tmux runs it on every status redraw, which can be about once a second when several plugins share the bar. Set `@battery_revamped_render` to `options` and each placeholder becomes a read of a tmux option instead, such as `#{E:@battery_revamped_out_percentage}`. One background process per server reads the battery every `status-interval` seconds, writes every value the status line uses in a single tmux call, and redraws once, so values change together and nothing renders empty while a job runs. The process exits after its current tick when the server stops, and a config reload replaces it.
+
+```tmux
+set -g @battery_revamped_render 'options'
+set -g @battery_revamped_fixed_width 'on'
+```
+
 | Metric | `nerd` glyph |
 |--------|--------------|
 | `percentage` | U+F0079 |

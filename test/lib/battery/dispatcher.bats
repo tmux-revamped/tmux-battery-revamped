@@ -383,3 +383,63 @@ teardown() {
 
   [ -z "${output}" ]
 }
+
+@test "battery dispatcher - fixed width pads a value to its widest form" {
+  set_tmux_option "@battery_revamped_fixed_width" "on"
+
+  run battery_labelled percentage "9%"
+
+  [[ "${output}" == "  9%" ]]
+}
+
+@test "battery dispatcher - natural widths cover the padded metrics" {
+  run bash -c 'source "$1"; for m in percentage graph; do printf "%s=%s " "$m" "$(battery_natural_width "$m")"; done' _ "${BATS_TEST_DIRNAME}/../../../src/battery.sh"
+
+  [[ "${output}" == "percentage=4 graph=0 " ]]
+}
+
+@test "battery dispatcher - publish writes every published metric in one batch" {
+  export PUBLISH_LOG="${TEST_TMPDIR}/publish.log"
+  _publish_tmux() { [[ "${1}" == "list-clients" ]] && return 0; printf '%s\n' "$@" > "${PUBLISH_LOG}"; }
+  battery_refresh() { return 0; }
+  battery_output() { printf 'v-%s' "${1}"; }
+  set_tmux_option "@battery_revamped_published" "alpha beta"
+
+  battery_publish
+
+  [[ "$(paste -sd'|' "${PUBLISH_LOG}")" == "set-option|-gq|@battery_revamped_out_alpha|v-alpha|;|set-option|-gq|@battery_revamped_out_beta|v-beta" ]]
+}
+
+@test "battery dispatcher - the daemon re-executes after the tick limit" {
+  ticker_run() { return 0; }
+  _battery_reexec() { echo "reexec" > "${TEST_TMPDIR}/reexec"; }
+
+  battery_daemon
+
+  [[ "$(cat "${TEST_TMPDIR}/reexec")" == "reexec" ]]
+}
+
+@test "battery dispatcher - the daemon stops when it loses ownership" {
+  ticker_run() { return 1; }
+  _battery_reexec() { echo "reexec" > "${TEST_TMPDIR}/reexec"; }
+
+  battery_daemon
+
+  [ ! -f "${TEST_TMPDIR}/reexec" ]
+}
+
+@test "battery dispatcher - main daemon runs the ticker" {
+  battery_daemon() { echo "daemon" > "${TEST_TMPDIR}/daemon"; }
+
+  main daemon
+
+  [[ "$(cat "${TEST_TMPDIR}/daemon")" == "daemon" ]]
+}
+
+@test "battery dispatcher - main start spawns the daemon" {
+  _ticker_spawn() { printf '%s' "${1}" > "${TEST_TMPDIR}/spawn"; }
+
+  main start
+
+  [[ "$(cat "${TEST_TMPDIR}/spawn")" == *"/src/battery.sh" ]]
+}
