@@ -113,5 +113,7 @@ update_option "status-right"
 
 if [[ "${render_mode}" == "options" ]]; then
   "${BAT_CMD}" start 2>/dev/null || true
+else
+  tmux set-option -gqu "@battery_revamped_ticker_pid"
 fi
 bind_popup

@@ -65,3 +65,15 @@ teardown() {
 
   [[ "$(cat "$(_mock_opt_file @battery_revamped_published)")" == "percentage" ]]
 }
+
+@test "entry - jobs mode releases a running ticker so the daemon exits" {
+  # Arrange
+  tmux set-option -gq "@battery_revamped_ticker_pid" "4242"
+  tmux set-option -gq "status-right" "[#{battery_percentage}]"
+
+  # Act
+  bash "${ENTRY}"
+
+  # Assert
+  [ ! -f "$(_mock_opt_file @battery_revamped_ticker_pid)" ]
+}
