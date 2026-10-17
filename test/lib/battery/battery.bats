@@ -261,3 +261,20 @@ teardown() {
   # Assert
   [[ "${output}" == "97" ]]
 }
+
+@test "battery.sh - a dual-battery host reads percent and cycles from one battery" {
+  # Arrange
+  mkdir -p "${TEST_TMPDIR}/ps/BAT0" "${TEST_TMPDIR}/ps/BAT1"
+  printf '40\n' > "${TEST_TMPDIR}/ps/BAT0/capacity"
+  printf '111\n' > "${TEST_TMPDIR}/ps/BAT0/cycle_count"
+  printf '90\n' > "${TEST_TMPDIR}/ps/BAT1/capacity"
+  printf '999\n' > "${TEST_TMPDIR}/ps/BAT1/cycle_count"
+  _bat_sys_root() { printf '%s' "${TEST_TMPDIR}/ps"; }
+
+  # Act
+  run _read_bat_cycle_count
+
+  # Assert
+  [[ "$(_read_sys_capacity)" == "40" ]] || false
+  [[ "${output}" == "111" ]]
+}

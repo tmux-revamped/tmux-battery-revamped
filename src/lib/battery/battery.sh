@@ -90,19 +90,32 @@ bat_health_pct() {
 
 # Host-probe seams.
 _read_pmset() { pmset -g batt 2>/dev/null; }
-_read_sys_capacity() { cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -1; }
-_read_sys_status() { cat /sys/class/power_supply/BAT*/status 2>/dev/null | head -1; }
 _read_acpi() { acpi -b 2>/dev/null | head -1; }
 _read_profiler() { system_profiler SPPowerDataType 2>/dev/null; }
 _read_ioreg_battery() { ioreg -r -c AppleSmartBattery 2>/dev/null; }
-_sys_battery_present() { compgen -G "/sys/class/power_supply/BAT*/capacity" >/dev/null 2>&1; }
+_bat_sys_root() { printf '%s' /sys/class/power_supply; }
+
+_bat_sys_dir() {
+  local dir
+  for dir in "$(_bat_sys_root)"/BAT*; do
+    if [[ -r "${dir}/capacity" ]]; then
+      printf '%s' "${dir}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+_sys_battery_present() { _bat_sys_dir >/dev/null; }
 
 _read_bat_sys() {
-  local name="${1}" base
-  for base in /sys/class/power_supply/BAT1 /sys/class/power_supply/BAT0; do
-    [[ -r "${base}/${name}" ]] && { cat "${base}/${name}" 2>/dev/null; return 0; }
-  done
+  local dir
+  dir=$(_bat_sys_dir) || return 0
+  [[ -r "${dir}/${1}" ]] || return 0
+  cat "${dir}/${1}" 2>/dev/null
 }
+_read_sys_capacity() { _read_bat_sys capacity; }
+_read_sys_status() { _read_bat_sys status; }
 _read_bat_cycle_count() { _read_bat_sys cycle_count; }
 _read_bat_charge_full() { _read_bat_sys charge_full; }
 _read_bat_charge_full_design() { _read_bat_sys charge_full_design; }
@@ -209,6 +222,8 @@ export -f _read_sys_status
 export -f _read_acpi
 export -f _read_profiler
 export -f _read_ioreg_battery
+export -f _bat_sys_root
+export -f _bat_sys_dir
 export -f _sys_battery_present
 export -f _read_bat_sys
 export -f _read_bat_cycle_count
