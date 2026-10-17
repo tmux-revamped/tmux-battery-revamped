@@ -30,10 +30,17 @@ teardown() {
 }
 
 @test "popup.sh - battery_popup_command references the dispatcher" {
+  # Arrange
   BATTERY_REVAMPED_CMD="/x/battery.sh"
+
+  # Act
   run battery_popup_command
-  [[ "${output}" == *"/x/battery.sh popup-card"* ]]
-  [[ "${output}" == *"read -r -n1 _"* ]]
+
+  # Assert
+  eval "set -- ${output}"
+  [[ "${1} ${2}" == "bash -c" ]] || false
+  [[ "${3}" == *"/x/battery.sh popup-card"* ]] || false
+  [[ "${3}" == *"read -r -n1 _"* ]]
 }
 
 @test "popup.sh - battery_show_popup opens through the _tmux seam" {
@@ -105,7 +112,7 @@ teardown() {
   BATTERY_REVAMPED_CMD="${dir}/battery.sh"
 
   # Act
-  bash -c "$(battery_popup_command)" </dev/null
+  bash -c "$(battery_popup_command)" <<<"q"
 
   # Assert
   [[ "$(cat "${TEST_TMPDIR}/ran")" == "popup-card" ]]
