@@ -48,6 +48,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   arithmetic now runs under the C locale.
 - The 1.3.0 entry below named the popup key as `prefix + B`. The popup has
   always been bound to `prefix + M-b`, as the README states.
+- On Apple Silicon, cycles showed a huge number and health was wrong, because
+  the ioreg key match hit the nested `BatteryData` dictionary first. Keys now
+  match only at the start of a line, and health uses `AppleRawMaxCapacity`.
+- On a Linux host with two batteries, percent came from one battery and
+  cycles, health and time remaining from the other. Every value now comes
+  from the same battery.
+- Linux health stayed empty on batteries that expose only `energy_full` and
+  `energy_full_design`. Those counters are now read first.
+- The drain rate compared consecutive 15 second readings, so it swung between
+  0 and 240%/h. It is now measured over at least five minutes.
+- The detail popup closed at once when the default shell was dash or zsh. It
+  now runs under bash.
+- A plugin directory containing a space or a quote broke every placeholder and
+  the popup key. The path is now quoted.
+- Switching from options mode back to jobs mode left the background process
+  running. Jobs mode now releases it, and it exits on its next tick.
+- The background process no longer keeps the caller's stdin open.
+- `@battery_revamped_enable_logging` was documented but did nothing, and is no
+  longer listed.
 
 ## [1.3.0] - 2026-06-30
 
