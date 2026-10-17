@@ -71,6 +71,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   every `#()` status call, because the placeholder replacement treated `&` in
   the quoted path as the matched text. Placeholders are now replaced by plain
   string splicing.
+- Setting `@battery_revamped_popup_key` to `off` leaves the detail popup
+  unbound; before, no value could turn the key off. The default stays `M-b`.
 
 ## [1.3.0] - 2026-06-30
 

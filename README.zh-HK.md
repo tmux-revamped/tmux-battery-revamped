@@ -145,7 +145,7 @@ set -g status-right '#{battery_color_status_fg}#{battery_icon_status} #{battery_
 | `@battery_revamped_fixed_width` | `off` | `on` 在左邊填充每個值至其最大寬度 |
 | `@battery_revamped_<metric>_width` | 空 | 某個指標的填充寬度，優先於固定寬度 |
 | `@battery_revamped_notify` | `0` | `1` 在電量進入低、極低或充滿時發出桌面通知 |
-| `@battery_revamped_popup_key` | `M-b` | 詳情彈出視窗的 prefix 按鍵 |
+| `@battery_revamped_popup_key` | `M-b` | 詳情彈出視窗的 prefix 按鍵；`off` 不綁定 |
 | `@battery_revamped_popup_width`、`@battery_revamped_popup_height` | `44`、`12` | 彈出視窗大小 |
 
 標籤適用於 `percentage`、`graph`、`remain`、`charging_watts`、`cycles`、`health`、`drain_rate`、`estimate`、`sparkline` 及 `power_source`。寬度設定不會截短較長的值。
@@ -303,7 +303,7 @@ set -g @battery_revamped_status_unknown_fg_color "#[fg=#586e75]"
 |:----|:-------|:-------|
 | `prefix + M-b` | 開啟詳情彈出視窗 | `@battery_revamped_popup_key` |
 
-彈出視窗顯示快取的電量、狀態、剩餘時間、功率、耗電速度、充電週期及健康度，不會再次查詢電池。按任何鍵關閉。`@battery_revamped_popup_key` 為空時會改用 `M-b`。
+彈出視窗顯示快取的電量、狀態、剩餘時間、功率、耗電速度、充電週期及健康度，不會再次查詢電池。按任何鍵關閉。`@battery_revamped_popup_key` 為空時會改用 `M-b`，為 `off` 時不綁定任何按鍵。
 
 <a id="how-it-works"></a>
 

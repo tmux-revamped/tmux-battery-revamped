@@ -125,3 +125,42 @@ make_quoted_plugin() {
   # Assert
   [[ "$(cat "${TEST_TMPDIR}/ran")" == "popup" ]]
 }
+
+@test "entry - a popup key of off binds nothing" {
+  # Arrange
+  tmux set-option -gq "@battery_revamped_popup_key" "off"
+  eval "_entry_mock_tmux() $(declare -f tmux | sed 1d)"
+  tmux() {
+    if [[ "${1}" == "bind-key" ]]; then
+      printf '%s\n' "${2}" >> "${TEST_TMPDIR}/bound"
+      return 0
+    fi
+    _entry_mock_tmux "$@"
+  }
+  export -f tmux _entry_mock_tmux
+
+  # Act
+  bash "${ENTRY}"
+
+  # Assert
+  [ ! -e "${TEST_TMPDIR}/bound" ]
+}
+
+@test "entry - an unset popup key keeps the M-b default" {
+  # Arrange
+  eval "_entry_mock_tmux() $(declare -f tmux | sed 1d)"
+  tmux() {
+    if [[ "${1}" == "bind-key" ]]; then
+      printf '%s\n' "${2}" >> "${TEST_TMPDIR}/bound"
+      return 0
+    fi
+    _entry_mock_tmux "$@"
+  }
+  export -f tmux _entry_mock_tmux
+
+  # Act
+  bash "${ENTRY}"
+
+  # Assert
+  [[ "$(cat "${TEST_TMPDIR}/bound")" == "M-b" ]]
+}

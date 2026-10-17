@@ -135,7 +135,7 @@ The status is one of `charged`, `charging`, `discharging`, `attached` or `unknow
 | `@battery_revamped_fixed_width` | `off` | `on` pads each value on the left to its widest form |
 | `@battery_revamped_<metric>_width` | empty | pad width for one metric, which wins over the fixed width |
 | `@battery_revamped_notify` | `0` | `1` sends a desktop notification when the charge enters low, critical or full |
-| `@battery_revamped_popup_key` | `M-b` | prefix key for the detail popup |
+| `@battery_revamped_popup_key` | `M-b` | prefix key for the detail popup; `off` binds nothing |
 | `@battery_revamped_popup_width`, `@battery_revamped_popup_height` | `44`, `12` | popup size |
 
 Labels apply to `percentage`, `graph`, `remain`, `charging_watts`, `cycles`, `health`, `drain_rate`, `estimate`, `sparkline` and `power_source`. A longer value is never cut by a width.
@@ -291,7 +291,7 @@ The plugin writes these options itself. Do not set them.
 |:----|:-------|:-------|
 | `prefix + M-b` | open the detail popup | `@battery_revamped_popup_key` |
 
-The popup shows the cached charge, status, remaining time, watts, drain rate, cycles and health, without probing the battery again. Any key closes it. An empty `@battery_revamped_popup_key` falls back to `M-b`.
+The popup shows the cached charge, status, remaining time, watts, drain rate, cycles and health, without probing the battery again. Any key closes it. An empty `@battery_revamped_popup_key` falls back to `M-b`, and `off` binds nothing.
 
 ## How it works
 

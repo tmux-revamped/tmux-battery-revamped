@@ -145,7 +145,7 @@ set -g status-right '#{battery_color_status_fg}#{battery_icon_status} #{battery_
 | `@battery_revamped_fixed_width` | `off` | `on`で各値を最大幅まで左側に詰め物をする |
 | `@battery_revamped_<metric>_width` | 空 | 1つの指標の幅。固定幅より優先 |
 | `@battery_revamped_notify` | `0` | `1`で残量が少ない、非常に少ない、満充電になったときにデスクトップ通知を送る |
-| `@battery_revamped_popup_key` | `M-b` | 詳細ポップアップのprefixキー |
+| `@battery_revamped_popup_key` | `M-b` | 詳細ポップアップのprefixキー。`off`で割り当てない |
 | `@battery_revamped_popup_width`、`@battery_revamped_popup_height` | `44`、`12` | ポップアップの大きさ |
 
 ラベルは`percentage`、`graph`、`remain`、`charging_watts`、`cycles`、`health`、`drain_rate`、`estimate`、`sparkline`、`power_source`に付きます。幅の設定で長い値が切り詰められることはありません。
@@ -303,7 +303,7 @@ set -g @battery_revamped_status_unknown_fg_color "#[fg=#586e75]"
 |:----|:-------|:-------|
 | `prefix + M-b` | 詳細ポップアップを開く | `@battery_revamped_popup_key` |
 
-ポップアップはキャッシュされた残量、状態、残り時間、ワット数、消費速度、充放電回数、劣化度を、電池を再度調べずに表示します。どのキーでも閉じます。`@battery_revamped_popup_key`が空のときは`M-b`を使います。
+ポップアップはキャッシュされた残量、状態、残り時間、ワット数、消費速度、充放電回数、劣化度を、電池を再度調べずに表示します。どのキーでも閉じます。`@battery_revamped_popup_key`が空のときは`M-b`を使い、`off`のときは何も割り当てません。
 
 <a id="how-it-works"></a>
 

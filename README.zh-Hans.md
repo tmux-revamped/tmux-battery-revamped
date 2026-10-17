@@ -145,7 +145,7 @@ set -g status-right '#{battery_color_status_fg}#{battery_icon_status} #{battery_
 | `@battery_revamped_fixed_width` | `off` | `on` 在左侧填充每个值到其最大宽度 |
 | `@battery_revamped_<metric>_width` | 空 | 某个指标的填充宽度，优先于固定宽度 |
 | `@battery_revamped_notify` | `0` | `1` 在电量进入低、极低或充满时发送桌面通知 |
-| `@battery_revamped_popup_key` | `M-b` | 详情弹窗的 prefix 按键 |
+| `@battery_revamped_popup_key` | `M-b` | 详情弹窗的 prefix 按键；`off` 不绑定 |
 | `@battery_revamped_popup_width`、`@battery_revamped_popup_height` | `44`、`12` | 弹窗大小 |
 
 标签适用于 `percentage`、`graph`、`remain`、`charging_watts`、`cycles`、`health`、`drain_rate`、`estimate`、`sparkline` 和 `power_source`。宽度设置不会截断较长的值。
@@ -303,7 +303,7 @@ set -g @battery_revamped_status_unknown_fg_color "#[fg=#586e75]"
 |:----|:-------|:-------|
 | `prefix + M-b` | 打开详情弹窗 | `@battery_revamped_popup_key` |
 
-弹窗显示缓存的电量、状态、剩余时间、功率、耗电速度、循环次数和健康度，不会再次查询电池。按任意键关闭。`@battery_revamped_popup_key` 为空时回退到 `M-b`。
+弹窗显示缓存的电量、状态、剩余时间、功率、耗电速度、循环次数和健康度，不会再次查询电池。按任意键关闭。`@battery_revamped_popup_key` 为空时回退到 `M-b`，为 `off` 时不绑定任何按键。
 
 <a id="how-it-works"></a>
 
