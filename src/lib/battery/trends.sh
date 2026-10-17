@@ -31,6 +31,14 @@ battery_drain_rate() {
   LC_ALL=C awk -v a="${pp}" -v b="${cp}" -v d="${dt}" 'BEGIN { printf "%.1f", (a - b) * 3600 / d }'
 }
 
+BATTERY_DRAIN_WINDOW=300
+
+battery_drain_due() {
+  local anchor="${1}" now="${2}"
+  [[ "${anchor}" =~ ^[0-9]+$ && "${now}" =~ ^[0-9]+$ ]] || return 0
+  (( now - anchor >= BATTERY_DRAIN_WINDOW || now < anchor ))
+}
+
 # battery_render_drain_rate VALUE -> formatted drain rate, empty when no value.
 battery_render_drain_rate() {
   [[ -z "${1}" ]] && { echo ""; return 0; }
@@ -125,6 +133,7 @@ battery_power_source() {
 }
 
 export -f battery_drain_rate
+export -f battery_drain_due
 export -f battery_render_drain_rate
 export -f battery_estimate_remain
 export -f battery_history_size

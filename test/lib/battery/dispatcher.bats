@@ -470,3 +470,34 @@ teardown() {
 
   [[ "$(cache_get cycles)" == "fresh" ]]
 }
+
+@test "battery.sh dispatcher - consecutive ticks inside the window set no drain rate" {
+  # Arrange
+  read_battery_percentage() { echo "90"; }
+  battery_refresh
+  export MOCK_EPOCH=1000015
+  read_battery_percentage() { echo "89"; }
+
+  # Act
+  battery_refresh
+
+  # Assert
+  [[ -z "$(cache_get drain_rate)" ]]
+}
+
+@test "battery.sh dispatcher - drain rate spans the window from its anchor reading" {
+  # Arrange
+  read_battery_percentage() { echo "90"; }
+  battery_refresh
+  export MOCK_EPOCH=1000015
+  read_battery_percentage() { echo "89"; }
+  battery_refresh
+  export MOCK_EPOCH=1000300
+  read_battery_percentage() { echo "85"; }
+
+  # Act
+  battery_refresh
+
+  # Assert
+  [[ "$(cache_get drain_rate)" == "60.0" ]]
+}

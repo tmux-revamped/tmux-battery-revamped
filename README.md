@@ -41,7 +41,7 @@ Inspired by [tmux-battery](https://github.com/tmux-plugins/tmux-battery). Built 
 | `#{battery_charging_watts}` | charging or discharging watts |
 | `#{battery_cycles}` | charge cycle count |
 | `#{battery_health}` | battery health, for example `96%` |
-| `#{battery_drain_rate}` | drain rate in percent per hour, for example `12.5%/h` |
+| `#{battery_drain_rate}` | drain rate in percent per hour, measured over at least five minutes, for example `12.5%/h` |
 | `#{battery_estimate}` | acpi-free remaining-time estimate, for example `2:00` |
 | `#{battery_sparkline}` | charge-history sparkline from a bounded ring buffer |
 | `#{battery_power_source}` | `AC` or `Bat` |

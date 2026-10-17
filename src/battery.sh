@@ -53,11 +53,20 @@ battery_detail_age() {
   get_tmux_option "@battery_revamped_detail_interval" "60"
 }
 
+battery_update_drain() {
+  local pct="${1}" now="${2}" anchor_pct anchor_ts rate
+  anchor_ts=$(get_tmux_option "@${CACHE_PREFIX}_snap_ts" "")
+  battery_drain_due "${anchor_ts}" "${now}" || return 0
+  anchor_pct=$(get_tmux_option "@${CACHE_PREFIX}_snap_pct" "")
+  rate=$(battery_drain_rate "${anchor_pct}" "${anchor_ts}" "${pct}" "${now}")
+  [[ -n "${rate}" ]] && cache_set drain_rate "${rate}"
+  set_tmux_option "@${CACHE_PREFIX}_snap_pct" "${pct}"
+  set_tmux_option "@${CACHE_PREFIX}_snap_ts" "${now}"
+}
+
 battery_refresh() {
-  local now prev_pct prev_ts new_pct new_status
+  local now new_pct new_status
   now=$(_cache_now)
-  prev_pct=$(cache_get percent)
-  prev_ts=$(get_tmux_option "@${CACHE_PREFIX}_snap_ts" "")
   new_pct=$(read_battery_percentage)
   new_status=$(read_battery_status)
   cache_set percent "${new_pct}"
@@ -66,11 +75,7 @@ battery_refresh() {
   cache_set_if_stale watts "$(battery_detail_age)" read_battery_watts
   cache_set_if_stale cycles "$(battery_detail_age)" read_battery_cycles
   cache_set_if_stale health "$(battery_detail_age)" read_battery_health
-  set_tmux_option "@${CACHE_PREFIX}_snap_ts" "${now}"
-
-  local rate
-  rate=$(battery_drain_rate "${prev_pct}" "${prev_ts}" "${new_pct}" "${now}")
-  [[ -n "${rate}" ]] && cache_set drain_rate "${rate}"
+  battery_update_drain "${new_pct}" "${now}"
 
   local ring
   ring=$(get_tmux_option "@battery_revamped_history" "")
