@@ -72,10 +72,16 @@ target_for() {
 }
 
 interpolate() {
-  local value="${1}"
-  local i
+  local value="${1}" i placeholder out rest
   for (( i = 0; i < ${#placeholders[@]}; i++ )); do
-    value="${value//${placeholders[i]}/$(target_for "${commands[i]}")}"
+    placeholder="${placeholders[i]#\\}"
+    out=""
+    rest="${value}"
+    while [[ "${rest}" == *"${placeholder}"* ]]; do
+      out="${out}${rest%%"${placeholder}"*}$(target_for "${commands[i]}")"
+      rest="${rest#*"${placeholder}"}"
+    done
+    value="${out}${rest}"
   done
   echo "${value}"
 }

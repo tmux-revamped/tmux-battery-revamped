@@ -67,6 +67,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The background process no longer keeps the caller's stdin open.
 - `@battery_revamped_enable_logging` was documented but did nothing, and is no
   longer listed.
+- On bash 5.2 and later, a plugin directory whose path held `&` still broke
+  every `#()` status call, because the placeholder replacement treated `&` in
+  the quoted path as the matched text. Placeholders are now replaced by plain
+  string splicing.
 
 ## [1.3.0] - 2026-06-30
 

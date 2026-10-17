@@ -79,7 +79,7 @@ teardown() {
 }
 
 make_quoted_plugin() {
-  local dir="${TEST_TMPDIR}/it's a plugin"
+  local dir="${TEST_TMPDIR}/it's a&b plugin"
   mkdir -p "${dir}/src"
   cp -f "${ENTRY}" "${dir}/battery-revamped.tmux"
   printf '#!/usr/bin/env bash\nprintf "%%s" "$1" > "%s/ran"\n' "${TEST_TMPDIR}" > "${dir}/src/battery.sh"
