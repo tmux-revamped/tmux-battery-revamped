@@ -1,12 +1,4 @@
 #!/usr/bin/env bash
-#
-# battery.sh: command dispatcher for tmux-battery-revamped.
-#
-# Usage: battery.sh <placeholder> | refresh | popup | popup-card | doctor
-#   percentage icon icon_charge icon_status
-#   color_fg color_bg color_charge_fg color_charge_bg color_status_fg color_status_bg
-#   graph remain charging_watts cycles health
-#   drain_rate estimate sparkline power_source alert_icon
 
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 

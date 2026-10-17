@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
-#
-# battery-revamped.tmux: TPM entry point.
-#
-# Replaces the #{battery_*} placeholders in status-left and status-right with
-# calls to the dispatcher, which reads cached values and never blocks the render.
-# Also binds a key to the detail popup.
 
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BAT_CMD="${PLUGIN_DIR}/src/battery.sh"

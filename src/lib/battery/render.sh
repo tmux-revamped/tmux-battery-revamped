@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# render.sh: map cached battery values to icons, colors, a graph, and text.
 
 [[ -n "${_BATTERY_REVAMPED_RENDER_LOADED:-}" ]] && return 0
 _BATTERY_REVAMPED_RENDER_LOADED=1
@@ -11,7 +9,6 @@ source "${_BATTERY_RENDER_DIR}/../tmux/tmux-ops.sh"
 
 _DEFAULT_TIER_ICONS=("_" "▁" "▂" "▃" "▄" "▅" "▆" "▇" "█")
 
-# battery_tier PCT -> charge tier 1..8.
 battery_tier() {
   local pct="${1%%.*}"
   [[ "${pct}" =~ ^[0-9]+$ ]] || pct=0

@@ -1,11 +1,4 @@
 #!/usr/bin/env bash
-#
-# popup.sh: the battery detail popup and the doctor capability report.
-#
-# The popup is a card built from already-cached values, with zero re-probing. It
-# opens through the _tmux seam, which tests replace, so display-popup is never
-# launched during the suite. The doctor report explains which sources this host
-# exposes and why a token may be empty.
 
 [[ -n "${_BATTERY_REVAMPED_POPUP_LOADED:-}" ]] && return 0
 _BATTERY_REVAMPED_POPUP_LOADED=1
@@ -20,10 +13,8 @@ source "${_BATTERY_POPUP_DIR}/../tmux/tmux-ops.sh"
 # shellcheck source=/dev/null
 source "${_BATTERY_POPUP_DIR}/../utils/cache.sh"
 
-# Single tmux seam for the popup. Tests override it so nothing is launched.
 _tmux() { tmux "$@"; }
 
-# battery_popup_card -> the multi-line detail card, read entirely from the cache.
 battery_popup_card() {
   printf 'Battery\n'
   printf 'Charge    : %s%%\n' "$(cache_get percent)"
@@ -35,8 +26,6 @@ battery_popup_card() {
   printf 'Health    : %s%%\n' "$(cache_get health)"
 }
 
-# battery_popup_command -> the shell command the popup runs: print the card,
-# then wait for a keypress. References the dispatcher so the card stays fresh.
 battery_popup_command() {
   local self hash="#" command
   self="$(printf '%q' "${BATTERY_REVAMPED_CMD:-battery.sh}")"
@@ -45,7 +34,6 @@ battery_popup_command() {
   printf '%s' "${command//"${hash}"/${hash}${hash}}"
 }
 
-# battery_show_popup -> open the detail popup through the _tmux seam.
 battery_show_popup() {
   local w h
   w=$(get_tmux_option "@battery_revamped_popup_width" "44")
@@ -75,7 +63,6 @@ _doctor_notify_backend() {
   fi
 }
 
-# battery_doctor -> a capability report naming detected sources per host.
 battery_doctor() {
   printf 'tmux-battery-revamped doctor\n'
   printf 'os             : %s\n' "$(platform_os)"

@@ -1,9 +1,4 @@
 #!/usr/bin/env bash
-#
-# battery.sh: battery percentage, status, remaining time, and charging watts.
-#
-# Pure parsers turn probe output into values. Reader functions wrap the host
-# probes behind seams that tests override. One worker calls every reader once.
 
 [[ -n "${_BATTERY_REVAMPED_BATTERY_LOADED:-}" ]] && return 0
 _BATTERY_REVAMPED_BATTERY_LOADED=1
@@ -14,7 +9,6 @@ source "${_BATTERY_LIB_DIR}/../utils/platform.sh"
 # shellcheck source=/dev/null
 source "${_BATTERY_LIB_DIR}/../utils/has-command.sh"
 
-# battery_norm_status RAW -> charging|discharging|charged|attached|unknown.
 battery_norm_status() {
   local s
   s=$(printf '%s' "${1}" | tr '[:upper:]' '[:lower:]')
@@ -29,12 +23,10 @@ battery_norm_status() {
   esac
 }
 
-# battery_pct_from_pmset TEXT -> integer percent from `pmset -g batt`.
 battery_pct_from_pmset() {
   printf '%s\n' "${1}" | grep -oE '[0-9]+%' | head -1 | tr -d '%'
 }
 
-# battery_status_from_pmset TEXT -> normalized status from `pmset -g batt`.
 battery_status_from_pmset() {
   local line raw
   line=$(printf '%s\n' "${1}" | grep -E '[0-9]+%' | head -1)
@@ -42,15 +34,10 @@ battery_status_from_pmset() {
   battery_norm_status "${raw}"
 }
 
-# battery_remain_from_pmset TEXT -> "H:MM" remaining, empty when not estimated.
 battery_remain_from_pmset() {
   printf '%s\n' "${1}" | grep -oE '[0-9]+:[0-9]+' | head -1
 }
 
-# battery_remain_from_sysfs NOW FULL RATE STATUS -> "H:MM" remaining computed
-# from the power-supply energy/charge counters. Empty when the rate is zero or
-# the status is neither charging nor discharging. NOW and RATE must share units
-# (energy_now with power_now, or charge_now with current_now).
 battery_remain_from_sysfs() {
   local now="${1}" full="${2}" rate="${3}" status="${4}"
   [[ "${now}" =~ ^[0-9]+$ && "${rate}" =~ ^[0-9]+$ ]] || { echo ""; return 0; }
@@ -68,19 +55,16 @@ battery_remain_from_sysfs() {
       if (M == 60) { H++; M = 0 } printf "%d:%02d", H, M }'
 }
 
-# battery_watts_from_profiler TEXT -> charging watts integer, empty when absent.
 battery_watts_from_profiler() {
   printf '%s\n' "${1}" | grep -i "Wattage" | grep -oE '[0-9]+' | head -1
 }
 
-# bat_ioreg_field TEXT KEY -> the integer value for an ioreg AppleSmartBattery key.
 bat_ioreg_field() {
   printf '%s\n' "${1}" | awk -v k="\"${2}\" = " '
     { line = $0; sub(/^[ \t]*/, "", line) }
     index(line, k) == 1 { v = substr(line, length(k) + 1); gsub(/[^0-9]/, "", v); print v; exit }'
 }
 
-# bat_health_pct MAX DESIGN -> battery health percent, clamped to 100.
 bat_health_pct() {
   [[ "${1}" =~ ^[0-9]+$ && "${2}" =~ ^[0-9]+$ && "${2}" -gt 0 ]] || { echo ""; return 0; }
   local h=$(( ${1} * 100 / ${2} ))
@@ -88,7 +72,6 @@ bat_health_pct() {
   echo "${h}"
 }
 
-# Host-probe seams.
 _read_pmset() { pmset -g batt 2>/dev/null; }
 _read_acpi() { acpi -b 2>/dev/null | head -1; }
 _read_profiler() { system_profiler SPPowerDataType 2>/dev/null; }
@@ -121,9 +104,6 @@ _read_bat_charge_full() { _read_bat_sys charge_full; }
 _read_bat_charge_full_design() { _read_bat_sys charge_full_design; }
 _read_bat_power_now() { _read_bat_sys power_now; }
 
-# Energy and charge counters share a unit family: energy_* pairs with power_now,
-# charge_* pairs with current_now. Each reader prefers energy, then charge, so
-# the remaining-time numerator and rate stay in matching units.
 _read_bat_energy_now() {
   local v; v=$(_read_bat_sys energy_now); [[ -n "${v}" ]] || v=$(_read_bat_sys charge_now); echo "${v}"
 }
@@ -184,7 +164,6 @@ read_battery_watts() {
   fi
 }
 
-# read_battery_cycles -> charge cycle count, empty when unavailable.
 read_battery_cycles() {
   if is_macos; then
     bat_ioreg_field "$(_read_ioreg_battery)" CycleCount
@@ -195,7 +174,6 @@ read_battery_cycles() {
   fi
 }
 
-# read_battery_health -> battery health percent, empty when unavailable.
 read_battery_health() {
   if is_macos; then
     local d max
