@@ -77,3 +77,51 @@ teardown() {
   # Assert
   [ ! -f "$(_mock_opt_file @battery_revamped_ticker_pid)" ]
 }
+
+make_quoted_plugin() {
+  local dir="${TEST_TMPDIR}/it's a plugin"
+  mkdir -p "${dir}/src"
+  cp -f "${ENTRY}" "${dir}/battery-revamped.tmux"
+  printf '#!/usr/bin/env bash\nprintf "%%s" "$1" > "%s/ran"\n' "${TEST_TMPDIR}" > "${dir}/src/battery.sh"
+  chmod +x "${dir}/src/battery.sh"
+  printf '%s' "${dir}"
+}
+
+@test "entry - a plugin path with a space and a quote still runs the dispatcher" {
+  # Arrange
+  local dir command
+  dir="$(make_quoted_plugin)"
+  tmux set-option -gq "status-right" "#{battery_percentage}"
+  bash "${dir}/battery-revamped.tmux"
+  command="$(cat "$(_mock_opt_file status-right)")"
+  command="${command#\#(}"
+  command="${command%)}"
+
+  # Act
+  bash -c "${command}"
+
+  # Assert
+  [[ "$(cat "${TEST_TMPDIR}/ran")" == "percentage" ]]
+}
+
+@test "entry - the popup key quotes a plugin path with a space and a quote" {
+  # Arrange
+  local dir
+  dir="$(make_quoted_plugin)"
+  eval "_entry_mock_tmux() $(declare -f tmux | sed 1d)"
+  tmux() {
+    if [[ "${1}" == "bind-key" ]]; then
+      printf '%s' "${!#}" > "${TEST_TMPDIR}/bound"
+      return 0
+    fi
+    _entry_mock_tmux "$@"
+  }
+  export -f tmux _entry_mock_tmux
+  bash "${dir}/battery-revamped.tmux"
+
+  # Act
+  bash -c "$(cat "${TEST_TMPDIR}/bound")"
+
+  # Assert
+  [[ "$(cat "${TEST_TMPDIR}/ran")" == "popup" ]]
+}

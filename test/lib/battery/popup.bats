@@ -94,3 +94,18 @@ teardown() {
   [[ "${output}" == *"sysfs battery  :"* ]]
   [[ "${output}" == *"notify backend :"* ]]
 }
+
+@test "popup.sh - the popup command runs a dispatcher whose path has a space and a quote" {
+  # Arrange
+  local dir="${TEST_TMPDIR}/it's a plugin"
+  mkdir -p "${dir}"
+  printf '#!/usr/bin/env bash\nprintf "%%s" "$1" > "%s/ran"\n' "${TEST_TMPDIR}" > "${dir}/battery.sh"
+  chmod +x "${dir}/battery.sh"
+  BATTERY_REVAMPED_CMD="${dir}/battery.sh"
+
+  # Act
+  bash -c "$(battery_popup_command)" </dev/null
+
+  # Assert
+  [[ "$(cat "${TEST_TMPDIR}/ran")" == "popup-card" ]]
+}

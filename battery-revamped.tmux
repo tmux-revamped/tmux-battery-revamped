@@ -8,6 +8,9 @@
 
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BAT_CMD="${PLUGIN_DIR}/src/battery.sh"
+BAT_CMD_ARG="$(printf '%q' "${BAT_CMD}")"
+hash="#"
+BAT_CMD_ARG="${BAT_CMD_ARG//"${hash}"/${hash}${hash}}"
 
 placeholders=(
   "\#{battery_percentage}"
@@ -33,26 +36,26 @@ placeholders=(
 )
 
 commands=(
-  "#(${BAT_CMD} percentage)"
-  "#(${BAT_CMD} icon)"
-  "#(${BAT_CMD} icon_charge)"
-  "#(${BAT_CMD} icon_status)"
-  "#(${BAT_CMD} color_fg)"
-  "#(${BAT_CMD} color_bg)"
-  "#(${BAT_CMD} color_charge_fg)"
-  "#(${BAT_CMD} color_charge_bg)"
-  "#(${BAT_CMD} color_status_fg)"
-  "#(${BAT_CMD} color_status_bg)"
-  "#(${BAT_CMD} graph)"
-  "#(${BAT_CMD} remain)"
-  "#(${BAT_CMD} charging_watts)"
-  "#(${BAT_CMD} cycles)"
-  "#(${BAT_CMD} health)"
-  "#(${BAT_CMD} drain_rate)"
-  "#(${BAT_CMD} estimate)"
-  "#(${BAT_CMD} sparkline)"
-  "#(${BAT_CMD} power_source)"
-  "#(${BAT_CMD} alert_icon)"
+  "#(${BAT_CMD_ARG} percentage)"
+  "#(${BAT_CMD_ARG} icon)"
+  "#(${BAT_CMD_ARG} icon_charge)"
+  "#(${BAT_CMD_ARG} icon_status)"
+  "#(${BAT_CMD_ARG} color_fg)"
+  "#(${BAT_CMD_ARG} color_bg)"
+  "#(${BAT_CMD_ARG} color_charge_fg)"
+  "#(${BAT_CMD_ARG} color_charge_bg)"
+  "#(${BAT_CMD_ARG} color_status_fg)"
+  "#(${BAT_CMD_ARG} color_status_bg)"
+  "#(${BAT_CMD_ARG} graph)"
+  "#(${BAT_CMD_ARG} remain)"
+  "#(${BAT_CMD_ARG} charging_watts)"
+  "#(${BAT_CMD_ARG} cycles)"
+  "#(${BAT_CMD_ARG} health)"
+  "#(${BAT_CMD_ARG} drain_rate)"
+  "#(${BAT_CMD_ARG} estimate)"
+  "#(${BAT_CMD_ARG} sparkline)"
+  "#(${BAT_CMD_ARG} power_source)"
+  "#(${BAT_CMD_ARG} alert_icon)"
 )
 
 render_mode="$(tmux show-option -gqv "@battery_revamped_render")"
@@ -100,7 +103,7 @@ bind_popup() {
   local key
   key=$(tmux show-option -gqv "@battery_revamped_popup_key")
   [[ -z "${key}" ]] && key="M-b"
-  tmux bind-key "${key}" run-shell "${BAT_CMD} popup"
+  tmux bind-key "${key}" run-shell "${BAT_CMD_ARG} popup"
 }
 
 chmod +x "${BAT_CMD}" 2>/dev/null || true

@@ -38,8 +38,10 @@ battery_popup_card() {
 # battery_popup_command -> the shell command the popup runs: print the card,
 # then wait for a keypress. References the dispatcher so the card stays fresh.
 battery_popup_command() {
-  local self="${BATTERY_REVAMPED_CMD:-battery.sh}"
-  printf '%s popup-card; printf "\\n[q] close"; read -r -n1 _' "${self}"
+  local self hash="#" command
+  self="$(printf '%q' "${BATTERY_REVAMPED_CMD:-battery.sh}")"
+  command="$(printf '%s popup-card; printf "\\n[q] close"; read -r -n1 _' "${self}")"
+  printf '%s' "${command//"${hash}"/${hash}${hash}}"
 }
 
 # battery_show_popup -> open the detail popup through the _tmux seam.
