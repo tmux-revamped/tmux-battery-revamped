@@ -8,7 +8,7 @@
 
 </div>
 
-**20** placeholders · **2** platforms · **177** tests · **95%+** coverage
+**20** placeholders · **2** platforms · **95%+** coverage
 
 Battery probes like `pmset` and `upower` are slow enough to stutter a status bar that queries them inline, and the classic approach fans out a dozen of them per refresh. This plugin queries once in a detached background worker, caches the result in tmux server user-options, and serves every placeholder from that cache. No temp files are used.
 
@@ -21,7 +21,7 @@ Inspired by [tmux-battery](https://github.com/tmux-plugins/tmux-battery). Built 
 </tr>
 <tr>
 <td><b>Cross-platform</b><br/>Works on Linux and macOS, across Intel and Apple Silicon.</td>
-<td><b>Tested</b><br/>177 tests hold the behavior at 95%+ coverage.</td>
+<td><b>Tested</b><br/>A bats suite holds the behavior at 95%+ coverage.</td>
 </tr>
 </table>
 
@@ -75,7 +75,6 @@ Press `prefix + I` to install.
 | `@battery_revamped_watts_format` | `%sW` | format for charging watts |
 | `@battery_revamped_cycles_format` | `%s` | format for the cycle count |
 | `@battery_revamped_health_format` | `%s%%` | format for battery health |
-| `@battery_revamped_enable_logging` | `0` | set to `1` to log under `~/.tmux/battery-revamped-logs` |
 | `@battery_revamped_low_threshold` | `20` | discharging percent treated as low |
 | `@battery_revamped_critical_threshold` | `10` | discharging percent treated as critical |
 | `@battery_revamped_low_icon` / `@battery_revamped_critical_icon` | empty | alert glyphs for `#{battery_alert_icon}` |
