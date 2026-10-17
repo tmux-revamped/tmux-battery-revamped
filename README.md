@@ -1,153 +1,151 @@
 <div align="center">
 
-<h1>tmux-battery-revamped</h1>
+# tmux-battery-revamped
 
-**Battery status for your tmux status bar, without ever blocking the status render.**
+<strong>Battery status for your tmux status bar, without ever blocking the status render.</strong>
 
-[![Tests](https://github.com/tmux-revamped/tmux-battery-revamped/actions/workflows/tests.yml/badge.svg)](https://github.com/tmux-revamped/tmux-battery-revamped/actions/workflows/tests.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](CHANGELOG.md)
+English &nbsp;|&nbsp; [日本語](README.ja.md) &nbsp;|&nbsp; [简体中文](README.zh-Hans.md) &nbsp;|&nbsp; [繁體中文（香港）](README.zh-HK.md)
+
+[![Tests](https://github.com/tmux-revamped/tmux-battery-revamped/actions/workflows/tests.yml/badge.svg)](https://github.com/tmux-revamped/tmux-battery-revamped/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](CHANGELOG.md)
+
+<p align="center">
+  <a href="#what-it-does">What it does</a> &nbsp;|&nbsp;
+  <a href="#requirements">Requirements</a> &nbsp;|&nbsp;
+  <a href="#installation">Installation</a> &nbsp;|&nbsp;
+  <a href="#usage">Usage</a> &nbsp;|&nbsp;
+  <a href="#configuration">Configuration</a> &nbsp;|&nbsp;
+  <a href="#key-bindings">Key bindings</a> &nbsp;|&nbsp;
+  <a href="#how-it-works">How it works</a>
+</p>
 
 </div>
 
-**20** placeholders · **2** platforms · **95%+** coverage
+**20** placeholders. **2** render modes. **5** system sources: `pmset`, `system_profiler`, `ioreg`, `/sys/class/power_supply` and `acpi`. CI runs the suite on **10** Linux and macOS toolchain combinations.
 
-Battery probes like `pmset`, `ioreg` and `system_profiler` are slow enough to stutter a status bar that queries them inline, and the classic approach fans out a dozen of them per refresh. This plugin queries once in a detached background worker, caches the result in tmux server user-options, and serves every placeholder from that cache. No temp files are used.
+---
 
-Inspired by [tmux-battery](https://github.com/tmux-plugins/tmux-battery). Built from [tmux-plugin-template](https://github.com/tmux-revamped/tmux-plugin-template).
+## What it does
 
-<table>
-<tr>
-<td><b>Non-blocking</b><br/>One detached background worker does the probing, so the status render never waits on slow battery tools.</td>
-<td><b>No temp files</b><br/>Readings live in tmux server user-options, with nothing written to disk.</td>
-</tr>
-<tr>
-<td><b>Cross-platform</b><br/>Works on Linux and macOS, across Intel and Apple Silicon.</td>
-<td><b>Tested</b><br/>A bats suite holds the behavior at 95%+ coverage.</td>
-</tr>
-</table>
+The plugin replaces `#{battery_*}` placeholders in `status-left` and `status-right` with the charge, status, remaining time, wattage, cycle count, health, drain rate and charge history of the laptop battery. Every placeholder reads a value cached in a tmux option. The battery tools run in the background, so a slow `pmset` or `system_profiler` call never delays the status line. Nothing is written to disk.
 
-## Placeholders
+It also sends optional desktop notifications at low, critical and full charge, and opens a detail popup on `prefix + M-b`.
 
-| Placeholder | Output |
-|-------------|--------|
-| `#{battery_percentage}` | charge, for example `83%` |
-| `#{battery_icon}` | charge tier icon |
-| `#{battery_icon_charge}` | charge tier icon |
-| `#{battery_icon_status}` | status icon |
-| `#{battery_color_fg}` / `#{battery_color_bg}` | status colors |
-| `#{battery_color_charge_fg}` / `#{battery_color_charge_bg}` | charge tier colors |
-| `#{battery_color_status_fg}` / `#{battery_color_status_bg}` | status colors |
-| `#{battery_graph}` | a proportional charge bar |
-| `#{battery_remain}` | time remaining, for example `4:32` |
-| `#{battery_charging_watts}` | charging or discharging watts |
-| `#{battery_cycles}` | charge cycle count |
-| `#{battery_health}` | battery health, for example `96%` |
-| `#{battery_drain_rate}` | drain rate in percent per hour, measured over at least five minutes, for example `12.5%/h` |
-| `#{battery_estimate}` | acpi-free remaining-time estimate, for example `2:00` |
-| `#{battery_sparkline}` | charge-history sparkline from a bounded ring buffer |
-| `#{battery_power_source}` | `AC` or `Bat` |
-| `#{battery_alert_icon}` | a glyph when discharging at a low or critical level |
+## Requirements
 
-## Install
+| Tool | Version | Needed for |
+|:-----|:--------|:-----------|
+| tmux | 3.2 or later | `display-popup` for the detail popup |
+| bash | 3.2 or later | every script, including macOS `/bin/bash` |
+| `acpi` | any | optional on Linux, a fallback for charge and remaining time |
+| `osascript` or `notify-send` | any | optional, desktop notifications |
 
-With [TPM](https://github.com/tmux-plugins/tpm):
+| Value | Linux, x86_64 and arm64 | macOS, Intel and Apple Silicon |
+|:------|:------------------------|:-------------------------------|
+| Charge and status | the first `/sys/class/power_supply/BAT*`, then `acpi` | `pmset` |
+| Remaining time | `acpi`, then computed from the `/sys` energy or charge counters | `pmset` |
+| Watts | `power_now`, the current draw | `system_profiler`, the charger's rated wattage |
+| Cycle count | `cycle_count` | `ioreg` |
+| Health | `energy_full` over `energy_full_design`, then the `charge_*` pair | `ioreg`, `AppleRawMaxCapacity` over `DesignCapacity` |
+
+A value the host has no source for renders empty. Run `src/battery.sh doctor` to see which sources this host has.
+
+## Installation
+
+### With TPM
+
+Add the plugin and a placeholder to `~/.tmux.conf`, then press `prefix + I`:
 
 ```tmux
 set -g @plugin 'tmux-revamped/tmux-battery-revamped'
 set -g status-right '#{battery_icon_status} #{battery_percentage} #{battery_remain}'
 ```
 
-Press `prefix + I` to install.
+### Manual
+
+```bash
+git clone https://github.com/tmux-revamped/tmux-battery-revamped ~/.tmux/plugins/tmux-battery-revamped
+```
+
+Then add this line to `~/.tmux.conf`, after the lines that set `status-left` and `status-right`, and reload tmux:
+
+```tmux
+run-shell ~/.tmux/plugins/tmux-battery-revamped/battery-revamped.tmux
+```
+
+## Usage
+
+Put placeholders in `status-left` or `status-right`. The plugin replaces them when it loads. [`examples/status-right.tmux.conf`](examples/status-right.tmux.conf) has a complete example.
+
+```tmux
+set -g status-right '#{battery_color_status_fg}#{battery_icon_status} #{battery_percentage}#[default] #{battery_graph} #{battery_remain} '
+```
+
+| Placeholder | Output |
+|:------------|:-------|
+| `#{battery_percentage}` | charge, for example `83%` |
+| `#{battery_icon}`, `#{battery_icon_charge}` | the icon of the current charge tier |
+| `#{battery_icon_status}` | the icon of the current status |
+| `#{battery_color_fg}`, `#{battery_color_bg}` | the colors of the current status |
+| `#{battery_color_status_fg}`, `#{battery_color_status_bg}` | the colors of the current status |
+| `#{battery_color_charge_fg}`, `#{battery_color_charge_bg}` | the colors of the current charge tier |
+| `#{battery_graph}` | a charge bar, for example `████████░░` |
+| `#{battery_remain}` | time remaining reported by the system, for example `4:32` |
+| `#{battery_estimate}` | time remaining computed from the drain rate, for example `2:00` |
+| `#{battery_charging_watts}` | watts, for example `45W` |
+| `#{battery_cycles}` | charge cycle count |
+| `#{battery_health}` | full capacity over design capacity, for example `96%` |
+| `#{battery_drain_rate}` | percent per hour over at least five minutes, for example `12.5%/h` |
+| `#{battery_sparkline}` | recent charge readings, for example `▇▇▆▆▅` |
+| `#{battery_power_source}` | `AC` or `Bat` |
+| `#{battery_alert_icon}` | a glyph while discharging at a low or critical charge |
+
+The status is one of `charged`, `charging`, `discharging`, `attached` or `unknown`. `attached` means on AC power and not charging.
 
 ## Configuration
 
 | Option | Default | Meaning |
-|--------|---------|---------|
-| `@battery_revamped_interval` | `15` | seconds a reading stays fresh |
-| `@battery_revamped_detail_interval` | `60` | seconds the remaining time, watts, cycle count and health readings stay fresh before they are probed again |
-| `@battery_revamped_percentage_format` | `%s%%` | format for the percentage |
-| `@battery_revamped_charge_tier{1..8}_icon` | `▁`..`█` | charge tier icons, tier 1 is lowest |
-| `@battery_revamped_charge_tier{1..8}_{fg,bg}_color` | empty | charge tier colors |
-| `@battery_revamped_status_{charged,charging,discharging,attached,unknown}_icon` | `=`, `+`, `-`, `!`, `?` | status icons |
-| `@battery_revamped_status_{state}_{fg,bg}_color` | empty | status colors |
+|:-------|:--------|:--------|
+| `@battery_revamped_interval` | `15` | seconds a charge and status reading stays fresh |
+| `@battery_revamped_detail_interval` | `60` | seconds the remaining time, watts, cycles and health stay fresh |
+| `@battery_revamped_render` | empty | `options` turns on options render mode, see [How it works](#how-it-works) |
+| `@battery_revamped_percentage_format` | `%s%%` | printf format for the charge |
+| `@battery_revamped_charge_tier{1..8}_icon` | `▁` to `█` | icon per charge tier, tier 1 is the lowest |
+| `@battery_revamped_charge_tier{1..8}_{fg,bg}_color` | empty | colors per charge tier |
+| `@battery_revamped_status_{charged,charging,discharging,attached,unknown}_icon` | `=`, `+`, `-`, `!`, `?` | icon per status |
+| `@battery_revamped_status_{state}_{fg,bg}_color` | empty | colors per status |
+| `@battery_revamped_icons` | `ascii` | `nerd` uses Nerd Font battery glyphs for the eight tiers, with charging variants, and labels every metric; a tier icon option still wins |
 | `@battery_revamped_graph_width` | `10` | cells in the charge bar |
-| `@battery_revamped_graph_full` | `█` | filled cell character |
-| `@battery_revamped_graph_empty` | `░` | empty cell character |
-| `@battery_revamped_remain_format` | `%s` | format for the remaining time |
-| `@battery_revamped_watts_format` | `%sW` | format for charging watts |
+| `@battery_revamped_graph_full` | `█` | filled cell |
+| `@battery_revamped_graph_empty` | `░` | empty cell |
+| `@battery_revamped_remain_format` | `%s` | format for both remaining-time placeholders |
+| `@battery_revamped_watts_format` | `%sW` | format for the watts |
 | `@battery_revamped_cycles_format` | `%s` | format for the cycle count |
-| `@battery_revamped_health_format` | `%s%%` | format for battery health |
-| `@battery_revamped_low_threshold` | `20` | discharging percent treated as low |
-| `@battery_revamped_critical_threshold` | `10` | discharging percent treated as critical |
-| `@battery_revamped_low_icon` / `@battery_revamped_critical_icon` | empty | alert glyphs for `#{battery_alert_icon}` |
+| `@battery_revamped_health_format` | `%s%%` | format for the health |
 | `@battery_revamped_drain_rate_format` | `%s%%/h` | format for the drain rate |
-| `@battery_revamped_history_size` | `16` | readings kept in the sparkline ring |
-| `@battery_revamped_source_ac_label` / `@battery_revamped_source_battery_label` | `AC` / `Bat` | power-source labels |
-| `@battery_revamped_hide_on_ac` | `0` | set to `1` to render nothing while the machine is on AC power, so the battery shows only when it is running on battery |
-| `@battery_revamped_before` / `@battery_revamped_after` | empty | formats placed around `#{battery_percentage}` only when it renders, for example a theme's pill opening and closing; `{icon}` becomes the current charge icon and `{color}` the current charge tier color, so the pill can follow the charge |
-| `@battery_revamped_icons` | `ascii` | set to `nerd` for Nerd Font battery-level glyphs on the eight charge tiers, with charging variants while charging; a tier icon option still overrides it |
-| `@battery_revamped_notify` | `0` | set to `1` for one-shot low/critical/full desktop notifications |
-| `@battery_revamped_popup_key` | `M-b` | prefix key that opens the detail popup |
-| `@battery_revamped_popup_width` / `@battery_revamped_popup_height` | `44` / `12` | detail popup size |
+| `@battery_revamped_history_size` | `16` | readings kept for the sparkline |
+| `@battery_revamped_low_threshold` | `20` | charge percent treated as low while discharging |
+| `@battery_revamped_critical_threshold` | `10` | charge percent treated as critical while discharging |
+| `@battery_revamped_low_icon`, `@battery_revamped_critical_icon` | empty | glyphs for `#{battery_alert_icon}` |
+| `@battery_revamped_source_ac_label`, `@battery_revamped_source_battery_label` | `AC`, `Bat` | text for `#{battery_power_source}` |
+| `@battery_revamped_hide_on_ac` | `0` | `1` renders every placeholder empty unless the battery is discharging |
+| `@battery_revamped_before`, `@battery_revamped_after` | empty | text placed around `#{battery_percentage}` only when it renders; `{icon}` becomes the charge icon and `{color}` the charge tier color |
+| `@battery_revamped_<metric>_label` | empty | text printed before one metric's value when the value is not empty; `''` removes the `nerd` label |
+| `@battery_revamped_fixed_width` | `off` | `on` pads each value on the left to its widest form |
+| `@battery_revamped_<metric>_width` | empty | pad width for one metric, which wins over the fixed width |
+| `@battery_revamped_notify` | `0` | `1` sends a desktop notification when the charge enters low, critical or full |
+| `@battery_revamped_popup_key` | `M-b` | prefix key for the detail popup |
+| `@battery_revamped_popup_width`, `@battery_revamped_popup_height` | `44`, `12` | popup size |
 
-### Internal state
+Labels apply to `percentage`, `graph`, `remain`, `charging_watts`, `cycles`, `health`, `drain_rate`, `estimate`, `sparkline` and `power_source`. A longer value is never cut by a width.
 
-The plugin manages these options itself. Do not set them.
+### Theme colors
 
-| Option | Holds |
-|--------|-------|
-| `@battery_revamped_published` | space-separated metrics found in `status-left` and `status-right` at load, the ones the daemon publishes in options render mode |
-| `@battery_revamped_alert_level` | last charge level seen, `ok`, `low`, `critical`, `full` or `unknown`, so each notification fires once per crossing |
-| `@battery_revamped_history` | recent charge percentages feeding `#{battery_sparkline}`, at most `@battery_revamped_history_size` of them |
+The color options are empty by default, so the plugin adds no color until you set one. Each block below colors tiers 1 to 3 red, 4 to 6 yellow and 7 to 8 green, and gives each status its own color:
 
-## Notifications, popup, and doctor
-
-Desktop notifications are off by default. Set `@battery_revamped_notify` to `1` to get one alert each time the charge crosses into low, critical, or full while discharging or charging. Each crossing fires once: the alert will not repeat until the level changes and crosses again. macOS uses `osascript`, Linux uses `notify-send`.
-
-```tmux
-set -g @battery_revamped_notify '1'
-```
-
-Press `prefix + M-b` to open a detail popup built from the cached values, with no re-probing. Rebind it with `@battery_revamped_popup_key`.
-
-Run the dispatcher with `doctor` to see which sources this host exposes:
-
-```sh
-./src/battery.sh doctor
-```
-
-## Labels
-
-Every value placeholder can carry a label, an icon or word printed before the value only when the value is not empty, so each figure on the bar says what it is. Set `@battery_revamped_<metric>_label` for one metric, or `@battery_revamped_icons` to `nerd` to label every metric from a Nerd Font set. A metric's own label wins over the set, and setting it to `''` removes the set's label for that metric. The default, `ascii`, adds no labels, so existing bars render unchanged.
-
-Set `@battery_revamped_fixed_width` to `on` to pad every value on the left to the widest it can get, such as four characters for a percentage, so a value that changes length, like `9%` becoming `42%`, never shifts the rest of a right-aligned status line. `@battery_revamped_<metric>_width` sets one metric's width and wins over the fixed width. A longer value is never cut. Both are off by default.
-
-### Render mode
-
-By default each placeholder becomes a `#()` call, and tmux runs it on every status redraw, which can be about once a second when several plugins share the bar. Set `@battery_revamped_render` to `options` and each placeholder becomes a read of a tmux option instead, such as `#{E:@battery_revamped_out_percentage}`. One background process per server reads the battery every `@battery_revamped_interval` seconds, 15 by default, writes every value the status line uses in a single tmux call, and redraws once, so values change together and nothing renders empty while a job runs. The process exits after its current tick when the server stops, and a config reload replaces it.
-
-```tmux
-set -g @battery_revamped_render 'options'
-set -g @battery_revamped_fixed_width 'on'
-```
-
-| Metric | `nerd` glyph |
-|--------|--------------|
-| `percentage` | U+F0079 |
-| `graph` | U+F07B1 |
-| `remain` | U+F051F |
-| `charging_watts` | U+F0241 |
-| `cycles` | U+F04E6 |
-| `health` | U+F05F6 |
-| `drain_rate` | U+F0533 |
-| `estimate` | U+F051F |
-| `sparkline` | U+F07B1 |
-| `power_source` | U+F06A5 |
-
-## Theme color suggestions
-
-The defaults use 16 ANSI color names that the active terminal theme remaps, so the plugin matches any theme out of the box. For exact hex values, copy one block below into your `.tmux.conf`. Each block colors the low charge tiers red, the middle tiers yellow, and the high tiers green, then colors the status states to match.
-
-### Catppuccin Mocha
+<details>
+<summary>Catppuccin Mocha</summary>
 
 ```tmux
 set -g @battery_revamped_charge_tier1_fg_color "#[fg=#f38ba8]"
@@ -165,7 +163,10 @@ set -g @battery_revamped_status_attached_fg_color "#[fg=#89b4fa]"
 set -g @battery_revamped_status_unknown_fg_color "#[fg=#a6adc8]"
 ```
 
-### Dracula
+</details>
+
+<details>
+<summary>Dracula</summary>
 
 ```tmux
 set -g @battery_revamped_charge_tier1_fg_color "#[fg=#ff5555]"
@@ -183,7 +184,10 @@ set -g @battery_revamped_status_attached_fg_color "#[fg=#bd93f9]"
 set -g @battery_revamped_status_unknown_fg_color "#[fg=#6272a4]"
 ```
 
-### Nord
+</details>
+
+<details>
+<summary>Nord</summary>
 
 ```tmux
 set -g @battery_revamped_charge_tier1_fg_color "#[fg=#bf616a]"
@@ -201,7 +205,10 @@ set -g @battery_revamped_status_attached_fg_color "#[fg=#81a1c1]"
 set -g @battery_revamped_status_unknown_fg_color "#[fg=#d8dee9]"
 ```
 
-### Gruvbox Dark
+</details>
+
+<details>
+<summary>Gruvbox Dark</summary>
 
 ```tmux
 set -g @battery_revamped_charge_tier1_fg_color "#[fg=#fb4934]"
@@ -219,7 +226,10 @@ set -g @battery_revamped_status_attached_fg_color "#[fg=#83a598]"
 set -g @battery_revamped_status_unknown_fg_color "#[fg=#a89984]"
 ```
 
-### Tokyo Night
+</details>
+
+<details>
+<summary>Tokyo Night</summary>
 
 ```tmux
 set -g @battery_revamped_charge_tier1_fg_color "#[fg=#f7768e]"
@@ -237,7 +247,10 @@ set -g @battery_revamped_status_attached_fg_color "#[fg=#7aa2f7]"
 set -g @battery_revamped_status_unknown_fg_color "#[fg=#565f89]"
 ```
 
-### Solarized Dark
+</details>
+
+<details>
+<summary>Solarized Dark</summary>
 
 ```tmux
 set -g @battery_revamped_charge_tier1_fg_color "#[fg=#dc322f]"
@@ -255,26 +268,53 @@ set -g @battery_revamped_status_attached_fg_color "#[fg=#268bd2]"
 set -g @battery_revamped_status_unknown_fg_color "#[fg=#586e75]"
 ```
 
-## Support by platform and architecture
+</details>
 
-The macOS path uses built-in tools and works the same on Intel and Apple Silicon.
+### Internal state
 
-| Field | Linux (x86_64 and arm64) | macOS (Intel and Apple Silicon) |
-|-------|--------------------------|----------------------------------|
-| Percentage and status | yes, `/sys/class/power_supply` then `acpi` | yes, `pmset` |
-| Remaining time | yes, with `acpi` installed | yes, `pmset` |
-| Charging or discharging watts | yes, `power_now` | yes, `system_profiler` |
-| Cycle count and health | yes, `/sys` | yes, `ioreg` (works on Apple Silicon) |
+The plugin writes these options itself. Do not set them.
 
-On Linux, percentage and status work through `/sys` with no extra package; remaining time needs `acpi` installed. Cycle count and health read from `ioreg` on macOS, which works on Apple Silicon, and from `/sys` on Linux.
+| Option | Holds |
+|:-------|:------|
+| `@battery_revamped_published` | the metrics found in `status-left` and `status-right` at load, which options mode publishes |
+| `@battery_revamped_out_<metric>` | the published value of each metric in options mode |
+| `@battery_revamped_ticker_pid` | pid of the options-mode background process |
+| `@battery_revamped_option_names` | the options the background process reads in one call per tick |
+| `@battery_revamped_alert_level` | the last level seen, `ok`, `low`, `critical`, `full` or `unknown`, so each notification fires once per crossing |
+| `@battery_revamped_history` | recent charge readings for the sparkline |
+| `@battery_revamped_snap_pct`, `@battery_revamped_snap_ts` | the reading the drain rate is measured from |
+| `@battery_revamped_{percent,status,remain,watts,cycles,health,drain_rate}` | cached readings, each with a `_ts` timestamp, and `_lock` on `percent` |
+
+## Key bindings
+
+| Key | Action | Option |
+|:----|:-------|:-------|
+| `prefix + M-b` | open the detail popup | `@battery_revamped_popup_key` |
+
+The popup shows the cached charge, status, remaining time, watts, drain rate, cycles and health, without probing the battery again. Any key closes it. An empty `@battery_revamped_popup_key` falls back to `M-b`.
+
+## How it works
+
+In the default jobs mode, each placeholder becomes a `#()` call to [`src/battery.sh`](src/battery.sh). The call prints the cached value at once. When the cached charge is older than `@battery_revamped_interval`, it also starts one background refresh, guarded by a lock so parallel calls do not start a second one.
+
+tmux runs every `#()` call on every status redraw. With several plugins on one bar that can be about once a second. Options mode removes those calls:
+
+```tmux
+set -g @battery_revamped_render 'options'
+set -g @battery_revamped_fixed_width 'on'
+```
+
+Each placeholder then becomes an option read such as `#{E:@battery_revamped_out_percentage}`. One background process per server reads the battery every `@battery_revamped_interval` seconds and writes every value the status line uses in a single tmux call, followed by one redraw. The process exits when the server stops or a config reload starts its replacement. Switching back to jobs mode releases it.
+
+The drain rate compares the current charge with a reading at least five minutes old. `#{battery_estimate}` divides the charge left by that rate. Notifications fire once per crossing into low, critical or full, through `osascript` on macOS and `notify-send` on Linux.
 
 ## Development
 
-```sh
-make test
-make lint
-make coverage
-```
+| Command | What it runs |
+|:--------|:-------------|
+| `make test` | the bats suite under [`test/`](test) |
+| `make lint` | shellcheck on every shell file |
+| `make coverage` | kcov line coverage on Linux, failing below 95% |
 
 ## License
 
@@ -301,26 +341,26 @@ memory, and `family/bin/sweep` is how it is discharged.
 | [`tmux-bluetooth-revamped`](https://github.com/tmux-revamped/tmux-bluetooth-revamped) | Every connected Bluetooth device and its battery in your tmux status bar, without blocking the render |
 | [`tmux-cpu-revamped`](https://github.com/tmux-revamped/tmux-cpu-revamped) | CPU load, temperature, and frequency in your tmux status bar, without ever blocking the render |
 | [`tmux-disk-revamped`](https://github.com/tmux-revamped/tmux-disk-revamped) | Disk usage for your tmux status bar, without ever blocking the status render |
-| [`tmux-extract-revamped`](https://github.com/tmux-revamped/tmux-extract-revamped) | Fuzzy-grab any URL, path, or word off the screen and paste it, pure shell, no Python |
-| [`tmux-fzf-revamped`](https://github.com/tmux-revamped/tmux-fzf-revamped) | Jump to any session, window, or pane, or kill it, from one fzf popup |
-| [`tmux-git-revamped`](https://github.com/tmux-revamped/tmux-git-revamped) | Git repository status in your tmux status bar, without ever blocking the render |
-| [`tmux-gpu-revamped`](https://github.com/tmux-revamped/tmux-gpu-revamped) | GPU load, temperature, frequency, and memory for your tmux status bar |
-| [`tmux-kube-revamped`](https://github.com/tmux-revamped/tmux-kube-revamped) | Current Kubernetes context and namespace in your tmux status bar, async, kubectl-free, never blocking |
+| [`tmux-extract-revamped`](https://github.com/tmux-revamped/tmux-extract-revamped) | Pick a URL, path, hash or any other token off the screen with fzf and type it at the cursor, in pure shell |
+| [`tmux-fzf-revamped`](https://github.com/tmux-revamped/tmux-fzf-revamped) | Switch to, kill, rename or create tmux sessions, windows and panes from fzf pickers in a popup |
+| [`tmux-git-revamped`](https://github.com/tmux-revamped/tmux-git-revamped) | Show the active pane's git branch, changes and provider counts in the tmux status bar without blocking it |
+| [`tmux-gpu-revamped`](https://github.com/tmux-revamped/tmux-gpu-revamped) | GPU load, temperature, clock, power and memory in the tmux status bar, from NVIDIA, AMD, Intel and Apple GPUs |
+| [`tmux-kube-revamped`](https://github.com/tmux-revamped/tmux-kube-revamped) | Current Kubernetes context and namespace in the tmux status bar, parsed from kubeconfig without kubectl |
 | [`tmux-launcher-revamped`](https://github.com/tmux-revamped/tmux-launcher-revamped) | Launch any TUI app in a popup or a window, scoped to the current pane's directory, with one configurable bindi |
 | [`tmux-logging-revamped`](https://github.com/tmux-revamped/tmux-logging-revamped) | Capture any pane to a file: live logging, full scrollback, or a one-shot screenshot |
 | [`tmux-music-revamped`](https://github.com/tmux-revamped/tmux-music-revamped) | Now playing in your tmux status bar, without ever blocking the status render |
 | [`tmux-network-revamped`](https://github.com/tmux-revamped/tmux-network-revamped) | Network throughput in your tmux status bar, without ever blocking the render |
 | [`tmux-pain-control-revamped`](https://github.com/tmux-revamped/tmux-pain-control-revamped) | Standard pane and window management bindings for tmux, version aware, vim friendly, and fully configurable |
-| [`tmux-persist-revamped`](https://github.com/tmux-revamped/tmux-persist-revamped) | Save, auto-save, and restore your whole tmux environment, one plugin, no status-line tricks |
-| [`tmux-plugin-template`](https://github.com/tmux-revamped/tmux-plugin-template) | A template for building non-blocking tmux status plugins |
-| [`tmux-pomodoro-revamped`](https://github.com/tmux-revamped/tmux-pomodoro-revamped) | A Pomodoro timer in your tmux status bar, with zero temp files: all state lives in tmux options |
-| [`tmux-ram-revamped`](https://github.com/tmux-revamped/tmux-ram-revamped) | RAM usage for your tmux status bar, without ever blocking the status render |
-| [`tmux-reorder-revamped`](https://github.com/tmux-revamped/tmux-reorder-revamped) | Drag a window tab on the status bar with the mouse to move that window |
-| [`tmux-scroll-revamped`](https://github.com/tmux-revamped/tmux-scroll-revamped) | Mouse wheel that does the right thing: scroll the app directly, copy-mode everywhere else. No app names to con |
-| [`tmux-sensible-revamped`](https://github.com/tmux-revamped/tmux-sensible-revamped) | Sensible tmux defaults that normalize behavior across every tmux version, OS, and terminal, without clobbering |
-| [`tmux-tiling-revamped`](https://github.com/tmux-revamped/tmux-tiling-revamped) | BSP tiling window management for tmux. Eight layouts, nineteen operations, zero dependencies |
-| [`tmux-time-revamped`](https://github.com/tmux-revamped/tmux-time-revamped) | Local clock and world clocks in your tmux status bar, without ever blocking the render |
-| [`tmux-weather-revamped`](https://github.com/tmux-revamped/tmux-weather-revamped) | Weather in your tmux status bar, fetched in the background so the render never waits on the network |
+| [`tmux-persist-revamped`](https://github.com/tmux-revamped/tmux-persist-revamped) | Save every tmux session, window and pane, auto-save on a timer, and restore it all after a reboot |
+| [`tmux-plugin-template`](https://github.com/tmux-revamped/tmux-plugin-template) | The starting point for a tmux-revamped plugin: shared library, bats harness, CI and family tooling |
+| [`tmux-pomodoro-revamped`](https://github.com/tmux-revamped/tmux-pomodoro-revamped) | A Pomodoro timer in the tmux status bar that keeps all of its state in tmux options, with no temp files |
+| [`tmux-ram-revamped`](https://github.com/tmux-revamped/tmux-ram-revamped) | RAM, swap and memory pressure in the tmux status bar, sampled in the background so the render never waits |
+| [`tmux-reorder-revamped`](https://github.com/tmux-revamped/tmux-reorder-revamped) | Drag a window tab along the tmux status bar with the mouse to move that window |
+| [`tmux-scroll-revamped`](https://github.com/tmux-revamped/tmux-scroll-revamped) | Send the mouse wheel to apps that scroll themselves and into tmux copy-mode everywhere else |
+| [`tmux-sensible-revamped`](https://github.com/tmux-revamped/tmux-sensible-revamped) | Sensible tmux defaults, gated by tmux version and terminal, that leave the options you set alone |
+| [`tmux-tiling-revamped`](https://github.com/tmux-revamped/tmux-tiling-revamped) | Tiling window management for tmux: eight layouts including BSP dwindle and spiral, with layout undo |
+| [`tmux-time-revamped`](https://github.com/tmux-revamped/tmux-time-revamped) | Local and world clocks for the tmux status bar, colored by time of day, with countdowns and a DST warning |
+| [`tmux-weather-revamped`](https://github.com/tmux-revamped/tmux-weather-revamped) | Weather for the tmux status bar from wttr.in, fetched in the background so the status line never waits |
 
 ### Checking an installation
 
