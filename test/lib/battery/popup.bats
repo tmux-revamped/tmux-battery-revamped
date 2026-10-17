@@ -31,8 +31,8 @@ teardown() {
 @test "popup.sh - battery_popup_command references the dispatcher" {
   BATTERY_REVAMPED_CMD="/x/battery.sh"
   run battery_popup_command
-  [[ "${output}" == "/x/battery.sh popup-card"* ]]
-  [[ "${output}" == *"read -r -n1 _" ]]
+  [[ "${output}" == *"/x/battery.sh popup-card"* ]]
+  [[ "${output}" == *"read -r -n1 _"* ]]
 }
 
 @test "popup.sh - battery_show_popup opens through the _tmux seam" {
@@ -108,4 +108,20 @@ teardown() {
 
   # Assert
   [[ "$(cat "${TEST_TMPDIR}/ran")" == "popup-card" ]]
+}
+
+@test "popup.sh - the popup command runs under bash from a POSIX default shell" {
+  # Arrange
+  local dir="${TEST_TMPDIR}/plugin"
+  mkdir -p "${dir}"
+  printf '#!/usr/bin/env bash\nprintf "%%s" "$1" > "%s/ran"\n' "${TEST_TMPDIR}" > "${dir}/battery.sh"
+  chmod +x "${dir}/battery.sh"
+  BATTERY_REVAMPED_CMD="${dir}/battery.sh"
+
+  # Act
+  run sh -c "$(battery_popup_command)" <<<"q"
+
+  # Assert
+  [[ "${output}" == *"[q] close" ]] || false
+  [ "${status}" -eq 0 ]
 }

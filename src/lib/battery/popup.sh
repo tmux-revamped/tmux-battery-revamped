@@ -41,6 +41,7 @@ battery_popup_command() {
   local self hash="#" command
   self="$(printf '%q' "${BATTERY_REVAMPED_CMD:-battery.sh}")"
   command="$(printf '%s popup-card; printf "\\n[q] close"; read -r -n1 _' "${self}")"
+  command="$(printf 'bash -c %q' "${command}")"
   printf '%s' "${command//"${hash}"/${hash}${hash}}"
 }
 
