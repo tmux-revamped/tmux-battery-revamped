@@ -278,3 +278,21 @@ teardown() {
   [[ "$(_read_sys_capacity)" == "40" ]] || false
   [[ "${output}" == "111" ]]
 }
+
+@test "battery.sh - Linux health reads energy counters when charge counters are absent" {
+  # Arrange
+  _PLATFORM_OS_CACHE="Linux"
+  _read_bat_sys() {
+    case "$1" in
+      energy_full)        echo "45000000" ;;
+      energy_full_design) echo "50000000" ;;
+      *)                  echo "" ;;
+    esac
+  }
+
+  # Act
+  run read_battery_health
+
+  # Assert
+  [[ "${output}" == "90" ]]
+}

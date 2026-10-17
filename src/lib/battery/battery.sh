@@ -204,7 +204,14 @@ read_battery_health() {
     [[ -n "${max}" ]] || max=$(bat_ioreg_field "${d}" MaxCapacity)
     bat_health_pct "${max}" "$(bat_ioreg_field "${d}" DesignCapacity)"
   elif is_linux; then
-    bat_health_pct "$(_read_bat_charge_full)" "$(_read_bat_charge_full_design)"
+    local full design
+    full=$(_read_bat_sys energy_full)
+    design=$(_read_bat_sys energy_full_design)
+    if [[ -z "${full}" || -z "${design}" ]]; then
+      full=$(_read_bat_charge_full)
+      design=$(_read_bat_charge_full_design)
+    fi
+    bat_health_pct "${full}" "${design}"
   fi
 }
 
