@@ -75,7 +75,9 @@ battery_watts_from_profiler() {
 
 # bat_ioreg_field TEXT KEY -> the integer value for an ioreg AppleSmartBattery key.
 bat_ioreg_field() {
-  printf '%s\n' "${1}" | awk -F' = ' -v k="\"${2}\"" '$0 ~ k { gsub(/[^0-9]/, "", $2); print $2; exit }'
+  printf '%s\n' "${1}" | awk -v k="\"${2}\" = " '
+    { line = $0; sub(/^[ \t]*/, "", line) }
+    index(line, k) == 1 { v = substr(line, length(k) + 1); gsub(/[^0-9]/, "", v); print v; exit }'
 }
 
 # bat_health_pct MAX DESIGN -> battery health percent, clamped to 100.
@@ -183,9 +185,11 @@ read_battery_cycles() {
 # read_battery_health -> battery health percent, empty when unavailable.
 read_battery_health() {
   if is_macos; then
-    local d
+    local d max
     d=$(_read_ioreg_battery)
-    bat_health_pct "$(bat_ioreg_field "${d}" MaxCapacity)" "$(bat_ioreg_field "${d}" DesignCapacity)"
+    max=$(bat_ioreg_field "${d}" AppleRawMaxCapacity)
+    [[ -n "${max}" ]] || max=$(bat_ioreg_field "${d}" MaxCapacity)
+    bat_health_pct "${max}" "$(bat_ioreg_field "${d}" DesignCapacity)"
   elif is_linux; then
     bat_health_pct "$(_read_bat_charge_full)" "$(_read_bat_charge_full_design)"
   fi

@@ -237,3 +237,27 @@ teardown() {
   run _read_sys_status
   true
 }
+
+@test "battery.sh - Apple Silicon ioreg yields the top-level cycle count" {
+  # Arrange
+  _PLATFORM_OS_CACHE="Darwin"
+  _read_ioreg_battery() { cat "${BATS_TEST_DIRNAME}/../../fixtures/ioreg-apple-silicon.txt"; }
+
+  # Act
+  run read_battery_cycles
+
+  # Assert
+  [[ "${output}" == "92" ]]
+}
+
+@test "battery.sh - Apple Silicon ioreg health uses the raw max capacity" {
+  # Arrange
+  _PLATFORM_OS_CACHE="Darwin"
+  _read_ioreg_battery() { cat "${BATS_TEST_DIRNAME}/../../fixtures/ioreg-apple-silicon.txt"; }
+
+  # Act
+  run read_battery_health
+
+  # Assert
+  [[ "${output}" == "97" ]]
+}
