@@ -63,6 +63,7 @@ Press `prefix + I` to install.
 | Option | Default | Meaning |
 |--------|---------|---------|
 | `@battery_revamped_interval` | `15` | seconds a reading stays fresh |
+| `@battery_revamped_detail_interval` | `60` | seconds the remaining time, watts, cycle count and health readings stay fresh before they are probed again |
 | `@battery_revamped_percentage_format` | `%s%%` | format for the percentage |
 | `@battery_revamped_charge_tier{1..8}_icon` | `▁`..`█` | charge tier icons, tier 1 is lowest |
 | `@battery_revamped_charge_tier{1..8}_{fg,bg}_color` | empty | charge tier colors |
@@ -87,6 +88,16 @@ Press `prefix + I` to install.
 | `@battery_revamped_notify` | `0` | set to `1` for one-shot low/critical/full desktop notifications |
 | `@battery_revamped_popup_key` | `M-b` | prefix key that opens the detail popup |
 | `@battery_revamped_popup_width` / `@battery_revamped_popup_height` | `44` / `12` | detail popup size |
+
+### Internal state
+
+The plugin manages these options itself. Do not set them.
+
+| Option | Holds |
+|--------|-------|
+| `@battery_revamped_published` | space-separated metrics found in `status-left` and `status-right` at load, the ones the daemon publishes in options render mode |
+| `@battery_revamped_alert_level` | last charge level seen, `ok`, `low`, `critical`, `full` or `unknown`, so each notification fires once per crossing |
+| `@battery_revamped_history` | recent charge percentages feeding `#{battery_sparkline}`, at most `@battery_revamped_history_size` of them |
 
 ## Notifications, popup, and doctor
 
