@@ -46,6 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   already on the status line now counts as used.
 - A comma-decimal locale such as pt_BR printed the drain rate as `1,0`. The
   arithmetic now runs under the C locale.
+- The 1.3.0 entry below named the popup key as `prefix + B`. The popup has
+  always been bound to `prefix + M-b`, as the README states.
 
 ## [1.3.0] - 2026-06-30
 
