@@ -106,10 +106,10 @@ battery_wrap() {
   color="$(battery_color_value "$(battery_charge_color "${percent}" fg)")"
   before="$(get_tmux_option "@battery_revamped_before" "")"
   after="$(get_tmux_option "@battery_revamped_after" "")"
-  before="${before//\{icon\}/${icon}}"
-  before="${before//\{color\}/${color}}"
-  after="${after//\{icon\}/${icon}}"
-  after="${after//\{color\}/${color}}"
+  before=${before//"{icon}"/"${icon}"}
+  before=${before//"{color}"/"${color}"}
+  after=${after//"{icon}"/"${icon}"}
+  after=${after//"{color}"/"${color}"}
   printf '%s%s%s' "${before}" "${out}" "${after}"
 }
 

@@ -363,6 +363,20 @@ teardown() {
   [[ "${output}" == "[#a6e3a1|B7]79%<#a6e3a1>" ]]
 }
 
+@test "battery.sh dispatcher - the wrapper keeps an ampersand and a backslash in the icon" {
+  # Arrange
+  set_tmux_option "@battery_revamped_before" "[{icon}]"
+  set_tmux_option "@battery_revamped_after" "<{icon}>"
+  set_tmux_option "@battery_revamped_charge_tier7_icon" 'R&D\1'
+  cache_get() { case "${1}" in percent) echo "79" ;; status) echo "discharging" ;; esac; }
+
+  # Act
+  run battery_wrap "79%"
+
+  # Assert
+  [ "${output}" = '[R&D\1]79%<R&D\1>' ]
+}
+
 @test "battery.sh dispatcher - every discharging tier has a nerd glyph" {
   local tier
   for tier in 1 2 3 4 5 6 7 8; do
