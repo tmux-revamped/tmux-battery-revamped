@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-27
+
 ### Added
 
 - `@battery_revamped_render 'options'` replaces the `#()` calls with tmux option
@@ -40,6 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- On bash 5.2 and later, an `&` or a backslash in the charge icon or tier color
+  came out altered in `@battery_revamped_before` and `@battery_revamped_after`,
+  because an unquoted `&` in a replacement stands for the matched text. Both are
+  now inserted verbatim.
 - In options mode, running the entry point a second time, as two overlapping
   config reloads do, found no placeholders left in the status line and
   published nothing, which froze every value. A metric whose option read is
