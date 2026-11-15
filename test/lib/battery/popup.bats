@@ -77,21 +77,19 @@ teardown() {
   [[ "$(_doctor_sysfs)" == "absent" ]]
 }
 
-@test "popup.sh - _doctor_notify_backend picks osascript on macOS" {
-  _PLATFORM_OS_CACHE="Darwin"
-  [[ "$(_doctor_notify_backend)" == "osascript" ]]
-}
-
-@test "popup.sh - _doctor_notify_backend picks notify-send on Linux" {
+@test "popup.sh - battery_doctor reports the shared notifier's backend" {
+  # Arrange
   _PLATFORM_OS_CACHE="Linux"
-  has_command() { [[ "$1" == "notify-send" ]]; }
-  [[ "$(_doctor_notify_backend)" == "notify-send" ]]
-}
+  mkdir -p "${TEST_TMPDIR}/bin"
+  printf '#!/bin/sh\nexit 0\n' >"${TEST_TMPDIR}/bin/notify-send"
+  chmod +x "${TEST_TMPDIR}/bin/notify-send"
+  PATH="${TEST_TMPDIR}/bin:${PATH}"
 
-@test "popup.sh - _doctor_notify_backend reports none without a backend" {
-  _PLATFORM_OS_CACHE="Linux"
-  has_command() { return 1; }
-  [[ "$(_doctor_notify_backend)" == "none" ]]
+  # Act
+  run battery_doctor
+
+  # Assert
+  [[ "${output}" == *"notify backend : notify-send"* ]]
 }
 
 @test "popup.sh - battery_doctor prints a capability report" {

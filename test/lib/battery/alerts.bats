@@ -6,45 +6,16 @@ setup() {
   setup_test_environment
   unset _BATTERY_REVAMPED_ALERTS_LOADED _BATTERY_REVAMPED_TRENDS_LOADED
   source "${BATS_TEST_DIRNAME}/../../../src/lib/battery/alerts.sh"
+  _PLATFORM_OS_CACHE="Linux"
+  NOTIFY_CALLS="${TEST_TMPDIR}/calls"
+  mkdir -p "${TEST_TMPDIR}/bin"
+  printf '#!/bin/sh\nprintf "%%s|" "$@" >>"%s"\nprintf "\\n" >>"%s"\n' "${NOTIFY_CALLS}" "${NOTIFY_CALLS}" >"${TEST_TMPDIR}/bin/notify-send"
+  chmod +x "${TEST_TMPDIR}/bin/notify-send"
+  PATH="${TEST_TMPDIR}/bin:${PATH}"
 }
 
 teardown() {
   cleanup_test_environment
-}
-
-@test "alerts.sh - _osascript body runs through a stubbed binary" {
-  osascript() { echo "osa:$*" > "${TEST_TMPDIR}/osa"; }
-  _osascript "display notification"
-  [[ "$(cat "${TEST_TMPDIR}/osa")" == "osa:-e display notification" ]]
-}
-
-@test "alerts.sh - _notify_send body runs through a stubbed binary" {
-  notify-send() { echo "ns:$*" > "${TEST_TMPDIR}/ns"; }
-  _notify_send "Title" "Body"
-  [[ "$(cat "${TEST_TMPDIR}/ns")" == "ns:Title Body" ]]
-}
-
-@test "alerts.sh - _notify uses osascript on macOS" {
-  _PLATFORM_OS_CACHE="Darwin"
-  _osascript() { echo "$1" > "${TEST_TMPDIR}/call"; }
-  _notify "Battery low" "20%"
-  grep -q "display notification" "${TEST_TMPDIR}/call"
-}
-
-@test "alerts.sh - _notify uses notify-send on Linux" {
-  _PLATFORM_OS_CACHE="Linux"
-  has_command() { [[ "$1" == "notify-send" ]]; }
-  _notify_send() { echo "$1|$2" > "${TEST_TMPDIR}/call"; }
-  _notify "Battery low" "20%"
-  [[ "$(cat "${TEST_TMPDIR}/call")" == "Battery low|20%" ]]
-}
-
-@test "alerts.sh - _notify is a no-op without a backend" {
-  _PLATFORM_OS_CACHE="Linux"
-  has_command() { return 1; }
-  run _notify "x" "y"
-  [[ "${status}" -eq 0 ]]
-  [[ -z "${output}" ]]
 }
 
 @test "alerts.sh - battery_alert_message formats each level" {
@@ -70,27 +41,37 @@ teardown() {
 }
 
 @test "alerts.sh - battery_alert_check records the level without notifying when disabled" {
-  _PLATFORM_OS_CACHE="Linux"
-  _notify() { echo "fired" > "${TEST_TMPDIR}/fired"; }
+  # Arrange
+  set_tmux_option "@battery_revamped_low_threshold" "20"
+
+  # Act
   battery_alert_check 5 discharging
-  [[ "$(get_tmux_option "@battery_revamped_alert_level")" == "critical" ]]
-  [[ ! -f "${TEST_TMPDIR}/fired" ]]
+
+  # Assert
+  [ "$(get_tmux_option "@battery_revamped_alert_level")" = "critical" ]
+  [ ! -e "${NOTIFY_CALLS}" ]
 }
 
-@test "alerts.sh - battery_alert_check fires once on a crossing when enabled" {
-  _PLATFORM_OS_CACHE="Linux"
+@test "alerts.sh - battery_alert_check notifies once on a crossing through the shared notifier" {
+  # Arrange
   set_tmux_option "@battery_revamped_notify" "1"
-  _notify() { echo "fired:$2" >> "${TEST_TMPDIR}/fired"; }
+
+  # Act
   battery_alert_check 5 discharging
   battery_alert_check 5 discharging
-  [[ "$(wc -l < "${TEST_TMPDIR}/fired" | tr -d ' ')" == "1" ]]
+
+  # Assert
+  [ "$(cat "${NOTIFY_CALLS}")" = "--|Battery critical|Critically low: 5%|" ]
 }
 
 @test "alerts.sh - battery_alert_check stays quiet at a safe level when enabled" {
-  _PLATFORM_OS_CACHE="Linux"
+  # Arrange
   set_tmux_option "@battery_revamped_notify" "1"
-  _notify() { echo "fired" > "${TEST_TMPDIR}/fired"; }
+
+  # Act
   battery_alert_check 80 discharging
-  [[ ! -f "${TEST_TMPDIR}/fired" ]]
-  [[ "$(get_tmux_option "@battery_revamped_alert_level")" == "ok" ]]
+
+  # Assert
+  [ ! -e "${NOTIFY_CALLS}" ]
+  [ "$(get_tmux_option "@battery_revamped_alert_level")" = "ok" ]
 }

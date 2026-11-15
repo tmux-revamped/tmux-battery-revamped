@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- A desktop notification whose title or message held a double quote or a
+  backslash broke the AppleScript that showed it, and text after the quote ran
+  as AppleScript. Notifications now go through the family's shared notifier,
+  which hands the title and message to `osascript` and `notify-send` as
+  arguments.
+
 ## [1.4.0] - 2026-10-27
 
 ### Added

@@ -12,6 +12,8 @@ source "${_BATTERY_POPUP_DIR}/../utils/has-command.sh"
 source "${_BATTERY_POPUP_DIR}/../tmux/tmux-ops.sh"
 # shellcheck source=/dev/null
 source "${_BATTERY_POPUP_DIR}/../utils/cache.sh"
+# shellcheck source=/dev/null
+source "${_BATTERY_POPUP_DIR}/../utils/notify.sh"
 
 _tmux() { tmux "$@"; }
 
@@ -53,16 +55,6 @@ _doctor_sysfs() {
   if _battery_sysfs_present; then echo "present"; else echo "absent"; fi
 }
 
-_doctor_notify_backend() {
-  if is_macos; then
-    echo "osascript"
-  elif has_command notify-send; then
-    echo "notify-send"
-  else
-    echo "none"
-  fi
-}
-
 battery_doctor() {
   printf 'tmux-battery-revamped doctor\n'
   printf 'os             : %s\n' "$(platform_os)"
@@ -71,7 +63,7 @@ battery_doctor() {
   printf 'ioreg          : %s\n' "$(_doctor_have ioreg)"
   printf 'acpi           : %s\n' "$(_doctor_have acpi)"
   printf 'sysfs battery  : %s\n' "$(_doctor_sysfs)"
-  printf 'notify backend : %s\n' "$(_doctor_notify_backend)"
+  printf 'notify backend : %s\n' "$(notify_backend)"
 }
 
 export -f _tmux
@@ -81,5 +73,4 @@ export -f battery_show_popup
 export -f _doctor_have
 export -f _battery_sysfs_present
 export -f _doctor_sysfs
-export -f _doctor_notify_backend
 export -f battery_doctor
