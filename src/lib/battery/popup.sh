@@ -28,12 +28,22 @@ battery_popup_card() {
   printf 'Health    : %s%%\n' "$(cache_get health)"
 }
 
+_battery_hash_free() {
+  local rest="${1}" out="" piece hash="#"
+  while [[ "${rest}" == *"${hash}"* ]]; do
+    printf -v piece '%q' "${rest%%"${hash}"*}"
+    out+="${piece}\"\$(printf '%b' '\\0043')\""
+    rest="${rest#*"${hash}"}"
+  done
+  printf -v piece '%q' "${rest}"
+  printf '%s%s' "${out}" "${piece}"
+}
+
 battery_popup_command() {
-  local self hash="#" command
+  local self command
   self="$(printf '%q' "${BATTERY_REVAMPED_CMD:-battery.sh}")"
   command="$(printf '%s popup-card; printf "\\n[q] close"; read -r -n1 _' "${self}")"
-  command="$(printf 'bash -c %q' "${command}")"
-  printf '%s' "${command//"${hash}"/${hash}${hash}}"
+  printf 'bash -c %s' "$(_battery_hash_free "${command}")"
 }
 
 battery_show_popup() {

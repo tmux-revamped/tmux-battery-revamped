@@ -131,3 +131,20 @@ teardown() {
   [[ "${output}" == *"[q] close" ]] || false
   [ "${status}" -eq 0 ]
 }
+
+@test "popup.sh - the popup command carries no hash and still runs a dispatcher whose path holds one" {
+  # Arrange
+  local dir="${TEST_TMPDIR}/it's #1 dir" command
+  mkdir -p "${dir}"
+  printf '#!/usr/bin/env bash\nprintf "ran:%%s\\n" "$1"\n' > "${dir}/battery.sh"
+  chmod +x "${dir}/battery.sh"
+  BATTERY_REVAMPED_CMD="${dir}/battery.sh"
+
+  # Act
+  command=$(battery_popup_command)
+  run sh -c "${command}" <<<"q"
+
+  # Assert
+  [[ "${command}" != *"#"* ]] || false
+  [[ "${output}" == "ran:popup-card"* ]]
+}
