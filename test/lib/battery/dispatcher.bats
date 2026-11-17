@@ -515,3 +515,27 @@ teardown() {
   # Assert
   [[ "$(cache_get drain_rate)" == "60.0" ]]
 }
+
+@test "battery.sh dispatcher - popup-card reads the battery first when nothing is cached" {
+  # Arrange
+  cache_set percent ""
+  battery_refresh() { cache_set percent "64"; }
+
+  # Act
+  run main popup-card
+
+  # Assert
+  [[ "${output}" == *"Charge    : 64%"* ]]
+}
+
+@test "battery.sh dispatcher - popup-card leaves a cached reading alone" {
+  # Arrange
+  cache_set percent "77"
+  battery_refresh() { cache_set percent "1"; }
+
+  # Act
+  run main popup-card
+
+  # Assert
+  [[ "${output}" == *"Charge    : 77%"* ]]
+}

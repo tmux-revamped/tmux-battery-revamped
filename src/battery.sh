@@ -236,7 +236,11 @@ main() {
     daemon) battery_daemon; return 0 ;;
     refresh)    battery_refresh; return 0 ;;
     popup)      battery_show_popup; return 0 ;;
-    popup-card) battery_popup_card; return 0 ;;
+    popup-card)
+      [[ -n "$(cache_get percent)" ]] || battery_refresh
+      battery_popup_card
+      return 0
+      ;;
     doctor)     battery_doctor; return 0 ;;
   esac
 

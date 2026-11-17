@@ -18,8 +18,14 @@ source "${_BATTERY_POPUP_DIR}/../utils/notify.sh"
 _tmux() { tmux "$@"; }
 
 battery_popup_card() {
+  local percent
+  percent="$(cache_get percent)"
   printf 'Battery\n'
-  printf 'Charge    : %s%%\n' "$(cache_get percent)"
+  if [[ -z "${percent}" ]]; then
+    printf 'no battery found on this machine\n'
+    return 0
+  fi
+  printf 'Charge    : %s%%\n' "${percent}"
   printf 'Status    : %s\n' "$(cache_get status)"
   printf 'Remaining : %s\n' "$(cache_get remain)"
   printf 'Watts     : %s\n' "$(cache_get watts)"

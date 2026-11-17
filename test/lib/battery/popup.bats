@@ -148,3 +148,14 @@ teardown() {
   [[ "${command}" != *"#"* ]] || false
   [[ "${output}" == "ran:popup-card"* ]]
 }
+
+@test "popup.sh - battery_popup_card says so when no battery was found" {
+  # Arrange
+  cache_set percent ""
+
+  # Act
+  run battery_popup_card
+
+  # Assert
+  [[ "${output}" == $'Battery\nno battery found on this machine' ]]
+}
