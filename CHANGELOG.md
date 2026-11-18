@@ -1,5 +1,18 @@
 # Changelog
 
+# [2.0.0](https://github.com/tmux-revamped/tmux-battery-revamped/compare/v1.4.3...v2.0.0) (2026-11-18)
+
+
+### Documentation
+
+* add the settings and value rules ([b1ffe10](https://github.com/tmux-revamped/tmux-battery-revamped/commit/b1ffe103fdd474be1486ee44d8eec1dbc57430cc))
+
+
+### BREAKING CHANGES
+
+* decided on its own, apart from the alias rule, which
+is about names.
+
 ## [1.4.3] - 2026-11-17
 
 ### Fixed
