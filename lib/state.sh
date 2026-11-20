@@ -1,0 +1,277 @@
+#!/bin/sh
+# shellcheck disable=SC2034
+
+[ -n "${BATTERY_REVAMPED_STATE_LOADED:-}" ] && return 0
+BATTERY_REVAMPED_STATE_LOADED=1
+
+BATTERY_REVAMPED_SETTINGS='popup_key	M-b
+popup_width	44
+popup_height	16
+interval	15
+detail_interval	60
+render	jobs
+percentage_format	%s%%
+icons	ascii
+graph_width	10
+graph_full	█
+graph_empty	░
+remain_format	%s
+watts_format	%sW
+cycles_format	%s
+health_format	%s%%
+drain_rate_format	%s%%/h
+history_size	16
+low_threshold	20
+critical_threshold	10
+low_icon
+critical_icon
+source_ac_label	AC
+source_battery_label	Bat
+hide_on_ac	0
+before
+after
+fixed_width	off
+notify	0
+charge_tier1_icon
+charge_tier2_icon
+charge_tier3_icon
+charge_tier4_icon
+charge_tier5_icon
+charge_tier6_icon
+charge_tier7_icon
+charge_tier8_icon
+charge_tier1_fg_color
+charge_tier1_bg_color
+charge_tier2_fg_color
+charge_tier2_bg_color
+charge_tier3_fg_color
+charge_tier3_bg_color
+charge_tier4_fg_color
+charge_tier4_bg_color
+charge_tier5_fg_color
+charge_tier5_bg_color
+charge_tier6_fg_color
+charge_tier6_bg_color
+charge_tier7_fg_color
+charge_tier7_bg_color
+charge_tier8_fg_color
+charge_tier8_bg_color
+status_charged_icon
+status_charging_icon
+status_discharging_icon
+status_attached_icon
+status_unknown_icon
+status_charged_fg_color
+status_charged_bg_color
+status_charging_fg_color
+status_charging_bg_color
+status_discharging_fg_color
+status_discharging_bg_color
+status_attached_fg_color
+status_attached_bg_color
+status_unknown_fg_color
+status_unknown_bg_color
+percentage_label
+graph_label
+remain_label
+charging_watts_label
+cycles_label
+health_label
+drain_rate_label
+estimate_label
+sparkline_label
+power_source_label
+percentage_width
+remain_width
+charging_watts_width
+cycles_width
+health_width
+drain_rate_width
+estimate_width
+sparkline_width
+power_source_width'
+BATTERY_REVAMPED_NAMES='popup_key popup_width popup_height interval detail_interval render percentage_format icons graph_width graph_full graph_empty remain_format watts_format cycles_format health_format drain_rate_format history_size low_threshold critical_threshold low_icon critical_icon source_ac_label source_battery_label hide_on_ac before after fixed_width notify charge_tier1_icon charge_tier2_icon charge_tier3_icon charge_tier4_icon charge_tier5_icon charge_tier6_icon charge_tier7_icon charge_tier8_icon charge_tier1_fg_color charge_tier1_bg_color charge_tier2_fg_color charge_tier2_bg_color charge_tier3_fg_color charge_tier3_bg_color charge_tier4_fg_color charge_tier4_bg_color charge_tier5_fg_color charge_tier5_bg_color charge_tier6_fg_color charge_tier6_bg_color charge_tier7_fg_color charge_tier7_bg_color charge_tier8_fg_color charge_tier8_bg_color status_charged_icon status_charging_icon status_discharging_icon status_attached_icon status_unknown_icon status_charged_fg_color status_charged_bg_color status_charging_fg_color status_charging_bg_color status_discharging_fg_color status_discharging_bg_color status_attached_fg_color status_attached_bg_color status_unknown_fg_color status_unknown_bg_color percentage_label graph_label remain_label charging_watts_label cycles_label health_label drain_rate_label estimate_label sparkline_label power_source_label percentage_width remain_width charging_watts_width cycles_width health_width drain_rate_width estimate_width sparkline_width power_source_width'
+BATTERY_REVAMPED_CARRIED='popup_width popup_height interval detail_interval render percentage_format icons graph_width graph_full graph_empty remain_format watts_format cycles_format health_format drain_rate_format history_size low_threshold critical_threshold low_icon critical_icon source_ac_label source_battery_label hide_on_ac before after fixed_width notify charge_tier1_icon charge_tier2_icon charge_tier3_icon charge_tier4_icon charge_tier5_icon charge_tier6_icon charge_tier7_icon charge_tier8_icon charge_tier1_fg_color charge_tier1_bg_color charge_tier2_fg_color charge_tier2_bg_color charge_tier3_fg_color charge_tier3_bg_color charge_tier4_fg_color charge_tier4_bg_color charge_tier5_fg_color charge_tier5_bg_color charge_tier6_fg_color charge_tier6_bg_color charge_tier7_fg_color charge_tier7_bg_color charge_tier8_fg_color charge_tier8_bg_color status_charged_icon status_charging_icon status_discharging_icon status_attached_icon status_unknown_icon status_charged_fg_color status_charged_bg_color status_charging_fg_color status_charging_bg_color status_discharging_fg_color status_discharging_bg_color status_attached_fg_color status_attached_bg_color status_unknown_fg_color status_unknown_bg_color percentage_label graph_label remain_label charging_watts_label cycles_label health_label drain_rate_label estimate_label sparkline_label power_source_label percentage_width remain_width charging_watts_width cycles_width health_width drain_rate_width estimate_width sparkline_width power_source_width'
+BATTERY_REVAMPED_LIVE='percent status remain watts cycles health drain_rate history alert_level snap_pct snap_ts percent_ts detail_ts percent_lock percent_lock_ts published'
+BATTERY_REVAMPED_S_popup_key='M-b'
+BATTERY_REVAMPED_S_popup_width='44'
+BATTERY_REVAMPED_S_popup_height='16'
+BATTERY_REVAMPED_S_interval='15'
+BATTERY_REVAMPED_S_detail_interval='60'
+BATTERY_REVAMPED_S_render='jobs'
+BATTERY_REVAMPED_S_percentage_format='%s%%'
+BATTERY_REVAMPED_S_icons='ascii'
+BATTERY_REVAMPED_S_graph_width='10'
+BATTERY_REVAMPED_S_graph_full='█'
+BATTERY_REVAMPED_S_graph_empty='░'
+BATTERY_REVAMPED_S_remain_format='%s'
+BATTERY_REVAMPED_S_watts_format='%sW'
+BATTERY_REVAMPED_S_cycles_format='%s'
+BATTERY_REVAMPED_S_health_format='%s%%'
+BATTERY_REVAMPED_S_drain_rate_format='%s%%/h'
+BATTERY_REVAMPED_S_history_size='16'
+BATTERY_REVAMPED_S_low_threshold='20'
+BATTERY_REVAMPED_S_critical_threshold='10'
+BATTERY_REVAMPED_S_low_icon=''
+BATTERY_REVAMPED_S_critical_icon=''
+BATTERY_REVAMPED_S_source_ac_label='AC'
+BATTERY_REVAMPED_S_source_battery_label='Bat'
+BATTERY_REVAMPED_S_hide_on_ac='0'
+BATTERY_REVAMPED_S_before=''
+BATTERY_REVAMPED_S_after=''
+BATTERY_REVAMPED_S_fixed_width='off'
+BATTERY_REVAMPED_S_notify='0'
+BATTERY_REVAMPED_S_charge_tier1_icon=''
+BATTERY_REVAMPED_S_charge_tier2_icon=''
+BATTERY_REVAMPED_S_charge_tier3_icon=''
+BATTERY_REVAMPED_S_charge_tier4_icon=''
+BATTERY_REVAMPED_S_charge_tier5_icon=''
+BATTERY_REVAMPED_S_charge_tier6_icon=''
+BATTERY_REVAMPED_S_charge_tier7_icon=''
+BATTERY_REVAMPED_S_charge_tier8_icon=''
+BATTERY_REVAMPED_S_charge_tier1_fg_color=''
+BATTERY_REVAMPED_S_charge_tier1_bg_color=''
+BATTERY_REVAMPED_S_charge_tier2_fg_color=''
+BATTERY_REVAMPED_S_charge_tier2_bg_color=''
+BATTERY_REVAMPED_S_charge_tier3_fg_color=''
+BATTERY_REVAMPED_S_charge_tier3_bg_color=''
+BATTERY_REVAMPED_S_charge_tier4_fg_color=''
+BATTERY_REVAMPED_S_charge_tier4_bg_color=''
+BATTERY_REVAMPED_S_charge_tier5_fg_color=''
+BATTERY_REVAMPED_S_charge_tier5_bg_color=''
+BATTERY_REVAMPED_S_charge_tier6_fg_color=''
+BATTERY_REVAMPED_S_charge_tier6_bg_color=''
+BATTERY_REVAMPED_S_charge_tier7_fg_color=''
+BATTERY_REVAMPED_S_charge_tier7_bg_color=''
+BATTERY_REVAMPED_S_charge_tier8_fg_color=''
+BATTERY_REVAMPED_S_charge_tier8_bg_color=''
+BATTERY_REVAMPED_S_status_charged_icon=''
+BATTERY_REVAMPED_S_status_charging_icon=''
+BATTERY_REVAMPED_S_status_discharging_icon=''
+BATTERY_REVAMPED_S_status_attached_icon=''
+BATTERY_REVAMPED_S_status_unknown_icon=''
+BATTERY_REVAMPED_S_status_charged_fg_color=''
+BATTERY_REVAMPED_S_status_charged_bg_color=''
+BATTERY_REVAMPED_S_status_charging_fg_color=''
+BATTERY_REVAMPED_S_status_charging_bg_color=''
+BATTERY_REVAMPED_S_status_discharging_fg_color=''
+BATTERY_REVAMPED_S_status_discharging_bg_color=''
+BATTERY_REVAMPED_S_status_attached_fg_color=''
+BATTERY_REVAMPED_S_status_attached_bg_color=''
+BATTERY_REVAMPED_S_status_unknown_fg_color=''
+BATTERY_REVAMPED_S_status_unknown_bg_color=''
+BATTERY_REVAMPED_S_percentage_label=''
+BATTERY_REVAMPED_S_graph_label=''
+BATTERY_REVAMPED_S_remain_label=''
+BATTERY_REVAMPED_S_charging_watts_label=''
+BATTERY_REVAMPED_S_cycles_label=''
+BATTERY_REVAMPED_S_health_label=''
+BATTERY_REVAMPED_S_drain_rate_label=''
+BATTERY_REVAMPED_S_estimate_label=''
+BATTERY_REVAMPED_S_sparkline_label=''
+BATTERY_REVAMPED_S_power_source_label=''
+BATTERY_REVAMPED_S_percentage_width=''
+BATTERY_REVAMPED_S_remain_width=''
+BATTERY_REVAMPED_S_charging_watts_width=''
+BATTERY_REVAMPED_S_cycles_width=''
+BATTERY_REVAMPED_S_health_width=''
+BATTERY_REVAMPED_S_drain_rate_width=''
+BATTERY_REVAMPED_S_estimate_width=''
+BATTERY_REVAMPED_S_sparkline_width=''
+BATTERY_REVAMPED_S_power_source_width=''
+BATTERY_REVAMPED_S_percent=''
+BATTERY_REVAMPED_S_status=''
+BATTERY_REVAMPED_S_remain=''
+BATTERY_REVAMPED_S_watts=''
+BATTERY_REVAMPED_S_cycles=''
+BATTERY_REVAMPED_S_health=''
+BATTERY_REVAMPED_S_drain_rate=''
+BATTERY_REVAMPED_S_history=''
+BATTERY_REVAMPED_S_alert_level=''
+BATTERY_REVAMPED_S_snap_pct=''
+BATTERY_REVAMPED_S_snap_ts=''
+BATTERY_REVAMPED_S_percent_ts=''
+BATTERY_REVAMPED_S_detail_ts=''
+BATTERY_REVAMPED_S_percent_lock=''
+BATTERY_REVAMPED_S_percent_lock_ts=''
+BATTERY_REVAMPED_S_published=''
+BATTERY_REVAMPED_METRICS='percentage icon icon_charge icon_status color_fg color_bg color_charge_fg color_charge_bg color_status_fg color_status_bg graph remain charging_watts cycles health drain_rate estimate sparkline power_source alert_icon'
+BATTERY_REVAMPED_LABELLED='percentage graph remain charging_watts cycles health drain_rate estimate sparkline power_source'
+BATTERY_REVAMPED_DEFAULT_POPUP_KEY='M-b'
+BATTERY_REVAMPED_DEFAULT_INTERVAL=15
+BATTERY_REVAMPED_MINUTE=60
+BATTERY_REVAMPED_DEFAULT_DETAIL=60
+BATTERY_REVAMPED_DEFAULT_GRAPH=10
+BATTERY_REVAMPED_DEFAULT_HISTORY=16
+BATTERY_REVAMPED_DEFAULT_LOW=20
+BATTERY_REVAMPED_DEFAULT_CRITICAL=10
+BATTERY_REVAMPED_DRAIN_WINDOW=300
+BATTERY_REVAMPED_POPUP_SINCE=3.2
+BATTERY_REVAMPED_NOTES_SINCE=3.1
+BATTERY_REVAMPED_SYS="${REVAMPED_TEST_SYS:-/sys}"
+BATTERY_REVAMPED_EMPTY='battery-revamped-empty-argument'
+BATTERY_REVAMPED_TMUX=''
+BATTERY_REVAMPED_NOTES=0
+BATTERY_REVAMPED_TOOL=''
+BATTERY_REVAMPED_JOB=''
+BATTERY_REVAMPED_KEYS=''
+BATTERY_REVAMPED_SKIPPED=''
+BATTERY_REVAMPED_PLAN=''
+BATTERY_REVAMPED_NOW=0
+BATTERY_REVAMPED_LIMIT=15
+BATTERY_REVAMPED_DETAIL=60
+BATTERY_REVAMPED_NUMBER=0
+BATTERY_REVAMPED_DOUBLED=''
+BATTERY_REVAMPED_LINE=''
+BATTERY_REVAMPED_ACPI=''
+BATTERY_REVAMPED_ACPI_DONE=''
+BATTERY_REVAMPED_DUE=''
+BATTERY_REVAMPED_POPUP_OK=0
+BATTERY_REVAMPED_STORED=0
+BATTERY_REVAMPED_OUT=''
+BATTERY_REVAMPED_LABEL=''
+BATTERY_REVAMPED_WIDTH=''
+BATTERY_REVAMPED_GLYPH=''
+BATTERY_REVAMPED_NATURAL=0
+BATTERY_REVAMPED_TIER=1
+BATTERY_REVAMPED_RING=''
+BATTERY_REVAMPED_SPARK=''
+BATTERY_REVAMPED_CARD=''
+BATTERY_REVAMPED_DIR=''
+BATTERY_REVAMPED_F_percent=''
+BATTERY_REVAMPED_F_status=''
+BATTERY_REVAMPED_F_remain=''
+BATTERY_REVAMPED_F_watts=''
+BATTERY_REVAMPED_F_cycles=''
+BATTERY_REVAMPED_F_health=''
+BATTERY_REVAMPED_R_percent=''
+BATTERY_REVAMPED_R_raw=''
+BATTERY_REVAMPED_R_remain=''
+BATTERY_REVAMPED_R_cycles=''
+BATTERY_REVAMPED_R_rawmax=''
+BATTERY_REVAMPED_R_max=''
+BATTERY_REVAMPED_R_design=''
+BATTERY_REVAMPED_R_watts=''
+BATTERY_REVAMPED_LEVEL=''
+BATTERY_REVAMPED_NAME=''
+BATTERY_REVAMPED_IOREG=''
+REVAMPED_CACHE_PREFIX=battery_revamped
+BATTERY_REVAMPED_KINDS='detail_interval	number
+graph_width	number
+history_size	number 1
+low_threshold	number
+critical_threshold	number
+percentage_width	number
+remain_width	number
+charging_watts_width	number
+cycles_width	number
+health_width	number
+drain_rate_width	number
+estimate_width	number
+sparkline_width	number
+power_source_width	number
+render	jobs options
+icons	ascii nerd
+fixed_width	on off
+hide_on_ac	0 1
+notify	0 1'

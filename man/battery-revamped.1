@@ -1,0 +1,353 @@
+.TH BATTERY-REVAMPED 1 "2026-11-20" "battery-revamped" "User Commands"
+.SH NAME
+battery\-revamped \- battery charge, state and health in the tmux status bar
+.SH SYNOPSIS
+.B battery\-revamped
+.RI [ options ]
+.I command
+.RI [ name ]
+.SH DESCRIPTION
+.B battery\-revamped
+shows the charge of the laptop battery in the tmux status line, with its state, the remaining
+time, the charger watts, the cycle count, the health, the drain rate, an estimate, a sparkline of
+the recent readings and an alert icon. macOS is read from pmset, system_profiler and ioreg. Linux is read from
+/sys/class/power_supply, with acpi as the fallback.
+.PP
+The entry point
+.B battery\-revamped.tmux
+runs
+.B apply
+once when tmux loads the plugin, which binds the popup key in one tmux call and replaces the placeholders in status\-left and status\-right: #{battery_percentage}, #{battery_icon}, #{battery_icon_charge}, #{battery_icon_status}, #{battery_color_fg}, #{battery_color_bg}, #{battery_color_charge_fg}, #{battery_color_charge_bg}, #{battery_color_status_fg}, #{battery_color_status_bg}, #{battery_graph}, #{battery_remain}, #{battery_charging_watts}, #{battery_cycles}, #{battery_health}, #{battery_drain_rate}, #{battery_estimate}, #{battery_sparkline}, #{battery_power_source}, #{battery_alert_icon}.
+.PP
+A status call prints the stored reading at once. When the reading is older than the interval it starts one in the background, so the status line never waits. With the options render mode a background process fills one tmux option per placeholder on every tick. Run with no command on a terminal, the tool offers a menu.
+.PP
+The drain rate compares the charge with a reading at least five minutes old, and the estimate divides the charge left by that rate. A value the host has no source for is empty.
+.SH COMMANDS
+.TP
+.B apply
+Bind the key and fill the status placeholders.
+.TP
+.B list
+Print every command apply would send.
+.TP
+.B status name
+Print one placeholder.
+.TP
+.B refresh
+Read the battery now.
+.TP
+.B card
+Print every figure as a table.
+.TP
+.B popup
+Open the battery card in a tmux popup.
+.TP
+.B popup\-card
+Print the card and wait for a key.
+.TP
+.B daemon
+Publish the placeholders on every tick.
+.TP
+.B doctor
+Check this machine.
+.TP
+.B version
+Print the version.
+.TP
+.B help
+Print the help page.
+.SH OPTIONS
+Every setting is also a long option. The command line wins over the environment, the environment over the tmux option, and the tmux option over the default. A tmux option set to nothing counts as not set; a value given as nothing on the command line or in the environment is used as given. An icon, label or text set to off prints nothing.
+.TP
+.B \-\-json
+With list, print the plan as one JSON object.
+.TP
+.B \-\-theme name
+The look: kodougu, catppuccin\-mocha, catppuccin\-latte, dracula, nord, gruvbox, tokyo\-night, mono.
+.TP
+.B \-\-popup\-key value
+Key of the card popup, or off. The default is M\-b.
+.TP
+.B \-\-popup\-width value
+Width of the popup. The default is 44.
+.TP
+.B \-\-popup\-height value
+Height of the popup. The default is 16.
+.TP
+.B \-\-interval value
+Seconds a reading stays fresh, or minute. The default is 15.
+.TP
+.B \-\-detail\-interval value
+Seconds the remaining time, watts, cycles and health stay fresh. The default is 60.
+.TP
+.B \-\-render value
+Jobs or options. The default is jobs.
+.TP
+.B \-\-percentage\-format value
+Printf format of the charge. The default is %s%%.
+.TP
+.B \-\-icons value
+Ascii or nerd. The default is ascii.
+.TP
+.B \-\-graph\-width value
+Cells of the charge bar. The default is 10.
+.TP
+.B \-\-graph\-full value
+A filled cell of the bar. The default is █.
+.TP
+.B \-\-graph\-empty value
+An empty cell of the bar. The default is ░.
+.TP
+.B \-\-remain\-format value
+Printf format of remain and estimate. The default is %s.
+.TP
+.B \-\-watts\-format value
+Printf format of the watts. The default is %sW.
+.TP
+.B \-\-cycles\-format value
+Printf format of the cycle count. The default is %s.
+.TP
+.B \-\-health\-format value
+Printf format of the health. The default is %s%%.
+.TP
+.B \-\-drain\-rate\-format value
+Printf format of the drain rate. The default is %s%%/h.
+.TP
+.B \-\-history\-size value
+Readings kept for the sparkline. The default is 16.
+.TP
+.B \-\-low\-threshold value
+Percent that counts as low while discharging. The default is 20.
+.TP
+.B \-\-critical\-threshold value
+Percent that counts as critical while discharging. The default is 10.
+.TP
+.B \-\-low\-icon value
+What alert_icon prints at a low charge. The default is none.
+.TP
+.B \-\-critical\-icon value
+What alert_icon prints at a critical charge. The default is none.
+.TP
+.B \-\-source\-ac\-label value
+What power_source prints off the battery. The default is AC.
+.TP
+.B \-\-source\-battery\-label value
+What power_source prints on the battery. The default is Bat.
+.TP
+.B \-\-hide\-on\-ac value
+1 prints every placeholder empty unless discharging. The default is 0.
+.TP
+.B \-\-before value
+Text before the charge. The default is none.
+.TP
+.B \-\-after value
+Text after the charge. The default is none.
+.TP
+.B \-\-fixed\-width value
+Pad the charge to its natural width. The default is off.
+.TP
+.B \-\-notify value
+1 sends a desktop notification at low, critical and full. The default is 0.
+.TP
+.B \-\-charge\-tier1\-icon value
+Icon of charge tier 1. The default is one to eight bars.
+.TP
+.B \-\-charge\-tier2\-icon value
+Icon of charge tier 2. The default is one to eight bars.
+.TP
+.B \-\-charge\-tier3\-icon value
+Icon of charge tier 3. The default is one to eight bars.
+.TP
+.B \-\-charge\-tier4\-icon value
+Icon of charge tier 4. The default is one to eight bars.
+.TP
+.B \-\-charge\-tier5\-icon value
+Icon of charge tier 5. The default is one to eight bars.
+.TP
+.B \-\-charge\-tier6\-icon value
+Icon of charge tier 6. The default is one to eight bars.
+.TP
+.B \-\-charge\-tier7\-icon value
+Icon of charge tier 7. The default is one to eight bars.
+.TP
+.B \-\-charge\-tier8\-icon value
+Icon of charge tier 8. The default is one to eight bars.
+.TP
+.B \-\-charge\-tier1\-fg\-color value
+Foreground style of charge tier 1. The default is none.
+.TP
+.B \-\-charge\-tier1\-bg\-color value
+Background style of charge tier 1. The default is none.
+.TP
+.B \-\-charge\-tier2\-fg\-color value
+Foreground style of charge tier 2. The default is none.
+.TP
+.B \-\-charge\-tier2\-bg\-color value
+Background style of charge tier 2. The default is none.
+.TP
+.B \-\-charge\-tier3\-fg\-color value
+Foreground style of charge tier 3. The default is none.
+.TP
+.B \-\-charge\-tier3\-bg\-color value
+Background style of charge tier 3. The default is none.
+.TP
+.B \-\-charge\-tier4\-fg\-color value
+Foreground style of charge tier 4. The default is none.
+.TP
+.B \-\-charge\-tier4\-bg\-color value
+Background style of charge tier 4. The default is none.
+.TP
+.B \-\-charge\-tier5\-fg\-color value
+Foreground style of charge tier 5. The default is none.
+.TP
+.B \-\-charge\-tier5\-bg\-color value
+Background style of charge tier 5. The default is none.
+.TP
+.B \-\-charge\-tier6\-fg\-color value
+Foreground style of charge tier 6. The default is none.
+.TP
+.B \-\-charge\-tier6\-bg\-color value
+Background style of charge tier 6. The default is none.
+.TP
+.B \-\-charge\-tier7\-fg\-color value
+Foreground style of charge tier 7. The default is none.
+.TP
+.B \-\-charge\-tier7\-bg\-color value
+Background style of charge tier 7. The default is none.
+.TP
+.B \-\-charge\-tier8\-fg\-color value
+Foreground style of charge tier 8. The default is none.
+.TP
+.B \-\-charge\-tier8\-bg\-color value
+Background style of charge tier 8. The default is none.
+.TP
+.B \-\-status\-charged\-icon value
+Icon of the charged state. The default is none.
+.TP
+.B \-\-status\-charging\-icon value
+Icon of the charging state. The default is none.
+.TP
+.B \-\-status\-discharging\-icon value
+Icon of the discharging state. The default is none.
+.TP
+.B \-\-status\-attached\-icon value
+Icon of the attached state. The default is none.
+.TP
+.B \-\-status\-unknown\-icon value
+Icon of the unknown state. The default is none.
+.TP
+.B \-\-status\-charged\-fg\-color value
+Foreground style of the charged state. The default is none.
+.TP
+.B \-\-status\-charged\-bg\-color value
+Background style of the charged state. The default is none.
+.TP
+.B \-\-status\-charging\-fg\-color value
+Foreground style of the charging state. The default is none.
+.TP
+.B \-\-status\-charging\-bg\-color value
+Background style of the charging state. The default is none.
+.TP
+.B \-\-status\-discharging\-fg\-color value
+Foreground style of the discharging state. The default is none.
+.TP
+.B \-\-status\-discharging\-bg\-color value
+Background style of the discharging state. The default is none.
+.TP
+.B \-\-status\-attached\-fg\-color value
+Foreground style of the attached state. The default is none.
+.TP
+.B \-\-status\-attached\-bg\-color value
+Background style of the attached state. The default is none.
+.TP
+.B \-\-status\-unknown\-fg\-color value
+Foreground style of the unknown state. The default is none.
+.TP
+.B \-\-status\-unknown\-bg\-color value
+Background style of the unknown state. The default is none.
+.TP
+.B \-\-percentage\-label value
+Label before the charge. The default is none.
+.TP
+.B \-\-graph\-label value
+Label before the charge bar. The default is none.
+.TP
+.B \-\-remain\-label value
+Label before the remaining time. The default is none.
+.TP
+.B \-\-charging\-watts\-label value
+Label before the watts. The default is none.
+.TP
+.B \-\-cycles\-label value
+Label before the cycle count. The default is none.
+.TP
+.B \-\-health\-label value
+Label before the health. The default is none.
+.TP
+.B \-\-drain\-rate\-label value
+Label before the drain rate. The default is none.
+.TP
+.B \-\-estimate\-label value
+Label before the estimate. The default is none.
+.TP
+.B \-\-sparkline\-label value
+Label before the sparkline. The default is none.
+.TP
+.B \-\-power\-source\-label value
+Label before the power source. The default is none.
+.TP
+.B \-\-percentage\-width value
+Width of the charge. The default is none.
+.TP
+.B \-\-remain\-width value
+Width of the remaining time. The default is none.
+.TP
+.B \-\-charging\-watts\-width value
+Width of the watts. The default is none.
+.TP
+.B \-\-cycles\-width value
+Width of the cycle count. The default is none.
+.TP
+.B \-\-health\-width value
+Width of the health. The default is none.
+.TP
+.B \-\-drain\-rate\-width value
+Width of the drain rate. The default is none.
+.TP
+.B \-\-estimate\-width value
+Width of the estimate. The default is none.
+.TP
+.B \-\-sparkline\-width value
+Width of the sparkline. The default is none.
+.TP
+.B \-\-power\-source\-width value
+Width of the power source. The default is none.
+.SH ENVIRONMENT
+.TP
+.B BATTERY_REVAMPED_<SETTING>
+The same as the option of that name, such as BATTERY_REVAMPED_INTERVAL for \-\-interval.
+.TP
+.B BATTERY_REVAMPED_THEME
+The look, when \-\-theme is not given.
+.TP
+.B BATTERY_REVAMPED_ACCENT
+A colour such as #CBA6F7 for the accent.
+.TP
+.B KODOUGU_THEME
+The family look, when neither is given.
+.TP
+.B KODOUGU_ACCENT
+The family accent, when the tool's is unset.
+.TP
+.B NO_COLOR
+Turn colour off.
+.SH TMUX OPTIONS
+Every option above is read as the tmux option @battery_revamped_ followed by its name with underscores, such as @battery_revamped_popup_key, and the theme of every tmux\-revamped tool as @revamped_theme. The stored reading lives in @battery_revamped_percent, _status, _remain, _watts, _cycles, _health, _drain_rate and _history, with the time of each reading in options that end in _ts. apply records the placeholders the status line uses in @battery_revamped_published, the daemon writes each one to @battery_revamped_out_name and keeps its process id in @battery_revamped_ticker_pid.
+.SH EXIT STATUS
+0 on success, 1 on any failure.
+.SH SEE ALSO
+.BR tmux (1),
+.BR pmset (1),
+.BR ioreg (8),
+.BR acpi (1),
+.BR gum (1)

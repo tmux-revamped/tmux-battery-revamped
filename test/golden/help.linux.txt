@@ -1,0 +1,157 @@
+$ battery-revamped help
+battery-revamped - battery charge, state and health in the status bar
+
+usage:
+  battery-revamped apply        bind the key and fill the placeholders
+  battery-revamped list         print what apply would send to tmux
+  battery-revamped status NAME  print one placeholder: percentage, icon,
+                                icon_charge, icon_status, color_fg, color_bg,
+                                color_charge_fg, color_charge_bg,
+                                color_status_fg, color_status_bg, graph,
+                                remain, charging_watts, cycles, health,
+                                drain_rate, estimate, sparkline,
+                                power_source or alert_icon
+  battery-revamped refresh      read the battery now for the status line
+  battery-revamped card         print every figure as a table
+  battery-revamped popup        open the battery card in a tmux popup
+  battery-revamped popup-card   print the card and wait for a key, what the
+                                popup runs
+  battery-revamped daemon       publish the placeholders on every tick, for
+                                the options render mode
+  battery-revamped doctor       check this machine
+  battery-revamped version      print the version
+  battery-revamped help         print this page
+
+keys:
+  --popup-key KEY               the prefix key for the card popup, or off
+  --popup-width SIZE            the popup's width
+  --popup-height SIZE           the popup's height
+
+reading:
+  --interval SECONDS            how long a reading stays fresh, or minute
+  --detail-interval SECONDS     how long the remaining time, watts, cycles
+                                and health stay fresh
+  --render MODE                 jobs or options
+  --history-size COUNT          readings kept for the sparkline
+  --low-threshold PERCENT       charge that counts as low while discharging
+  --critical-threshold PERCENT  charge that counts as critical
+  --notify 0|1                  1 sends a desktop notification at low,
+                                critical and full charge
+  --hide-on-ac 0|1              1 prints every placeholder empty unless the
+                                battery is discharging
+
+icons and colours:
+  --icons SET                   ascii, or nerd for Nerd Font glyphs
+  --charge-tierN-icon TEXT      icon of charge tier N, 1 to 8
+  --charge-tierN-fg-color STYLE foreground style of charge tier N
+  --charge-tierN-bg-color STYLE background style of charge tier N
+  --status-STATE-icon TEXT      icon of charged, charging, discharging,
+                                attached or unknown
+  --status-STATE-fg-color STYLE foreground style of a state
+  --status-STATE-bg-color STYLE background style of a state
+  --low-icon TEXT               what alert_icon prints at a low charge
+  --critical-icon TEXT          what alert_icon prints at a critical charge
+  --source-ac-label TEXT        what power_source prints off the battery
+  --source-battery-label TEXT   what power_source prints on the battery
+  --before TEXT, --after TEXT   text around percentage; {icon} and {color}
+                                stand for the charge icon and tier colour
+
+formats:
+  --percentage-format FORMAT    printf format of the charge
+  --remain-format FORMAT        printf format of remain and estimate
+  --watts-format FORMAT         printf format of the watts
+  --cycles-format FORMAT        printf format of the cycle count
+  --health-format FORMAT        printf format of the health
+  --drain-rate-format FORMAT    printf format of the drain rate
+  --graph-width COUNT           cells of the charge bar
+  --graph-full TEXT             a filled cell of the bar
+  --graph-empty TEXT            an empty cell of the bar
+  --METRIC-label TEXT           the label before one metric
+  --fixed-width on|off          on pads percentage to its natural width
+  --METRIC-width COUNT          the width of one metric
+
+output:
+  --json                        list prints one JSON object
+  --theme NAME                  the look: kodougu, catppuccin-mocha,
+                                catppuccin-latte, dracula, nord, gruvbox,
+                                tokyo-night or mono
+
+environment:
+  BATTERY_REVAMPED_<SETTING>   the same as the option of that name, such as
+                               BATTERY_REVAMPED_INTERVAL for --interval
+  BATTERY_REVAMPED_THEME       the look, when --theme is not given
+  BATTERY_REVAMPED_ACCENT      a colour such as #CBA6F7 for the accent
+  KODOUGU_THEME                the family look, when neither is given
+  KODOUGU_ACCENT               the family accent, when the tool's is unset
+  NO_COLOR                     turn colour off
+
+tmux options:
+  @battery_revamped_popup_key          the card popup key (default M-b)
+  @battery_revamped_popup_width        width of the popup (default 44)
+  @battery_revamped_popup_height       height of the popup (default 16)
+  @battery_revamped_interval           seconds a reading stays fresh
+                                       (default 15)
+  @battery_revamped_detail_interval    seconds the remaining time, watts,
+                                       cycles and health stay fresh
+                                       (default 60)
+  @battery_revamped_render             jobs or options (default jobs)
+  @battery_revamped_history_size       readings kept for the sparkline
+                                       (default 16)
+  @battery_revamped_low_threshold      percent that is low (default 20)
+  @battery_revamped_critical_threshold percent that is critical (default 10)
+  @battery_revamped_notify             1 sends notifications (default 0)
+  @battery_revamped_hide_on_ac         1 hides everything off the battery
+                                       (default 0)
+  @battery_revamped_icons              ascii or nerd (default ascii)
+  @battery_revamped_charge_tierN_icon  icon of tier N (default one to eight
+                                       bars)
+  @battery_revamped_charge_tierN_fg_color
+  @battery_revamped_charge_tierN_bg_color
+                                       style of tier N (default none)
+  @battery_revamped_status_STATE_icon  icon of a state (default = + - ! ?)
+  @battery_revamped_status_STATE_fg_color
+  @battery_revamped_status_STATE_bg_color
+                                       style of a state (default none)
+  @battery_revamped_low_icon           alert_icon at a low charge (none)
+  @battery_revamped_critical_icon      alert_icon at a critical charge (none)
+  @battery_revamped_source_ac_label    power_source off the battery (AC)
+  @battery_revamped_source_battery_label
+                                       power_source on the battery (Bat)
+  @battery_revamped_before             text before percentage (none)
+  @battery_revamped_after              text after percentage (none)
+  @battery_revamped_percentage_format  format of percentage (default "%s%%")
+  @battery_revamped_remain_format      format of remain and estimate
+                                       (default "%s")
+  @battery_revamped_watts_format       format of charging_watts
+                                       (default "%sW")
+  @battery_revamped_cycles_format      format of cycles (default "%s")
+  @battery_revamped_health_format      format of health (default "%s%%")
+  @battery_revamped_drain_rate_format  format of drain_rate
+                                       (default "%s%%<path>
+  @battery_revamped_graph_width        cells of the bar (default 10)
+  @battery_revamped_graph_full         filled cell (default a full block)
+  @battery_revamped_graph_empty        empty cell (default a light shade)
+  @battery_revamped_fixed_width        on or off (default off)
+  @battery_revamped_<metric>_label     label before one metric (none)
+  @battery_revamped_<metric>_width     width of one metric (none)
+  @revamped_theme                      the family look (default kodougu)
+
+notes:
+  A metric that takes a label and a width is percentage, graph, remain,
+  charging_watts, cycles, health, drain_rate, estimate, sparkline or
+  power_source, written with dashes in an option, such as
+  --drain-rate-label. The graph width is also the width graph is padded to.
+  The placeholders are #{battery_<name>} for each name status takes. Each
+  prints the stored reading at once, and starts one background reading
+  when it is older than the interval. With --render options each
+  placeholder reads a tmux option that a background process fills on every
+  tick, so a status refresh starts no process. A tmux option set to
+  nothing means its default; an icon, label or text set to off prints
+  nothing. A status name that is not a placeholder prints nothing.
+
+examples:
+  battery-revamped status percentage
+  battery-revamped card
+  battery-revamped --icons nerd --fixed-width on apply
+  battery-revamped list --json
+exit 0

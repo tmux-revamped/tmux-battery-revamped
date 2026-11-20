@@ -1,0 +1,3 @@
+$ battery-revamped --frobnicate
+battery-revamped: unknown option '--frobnicate'. run 'battery-revamped help' for usage.
+exit 1

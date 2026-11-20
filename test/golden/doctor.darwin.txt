@@ -1,0 +1,16 @@
+$ battery-revamped doctor
+tmux               ok       <path>, 3.8
+popup              ok       tmux 3.8 opens the detail popup
+pmset              warn     without it the charge stays empty
+system_profiler    warn     without it the watts stay empty
+ioreg              warn     without it the cycles and the health stay empty
+settings           ok       every option holds a value it knows
+keys               ok       every key it binds is free or its own
+gum                ok       <path>
+notifier           warn     no osascript or notify-send, so notifications stay in the status line
+awk                ok       <path>, <flavor>
+sed                ok       <path>, <flavor>
+tr                 ok       <path>, <flavor>
+date               ok       <path>, <flavor>
+cat                ok       <path>, <flavor>
+exit 0

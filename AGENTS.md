@@ -8,54 +8,63 @@ Guidance for anyone, human or agent, changing tmux-battery-revamped. What it is 
 
 | Path | Holds |
 |:-----|:------|
-| [`battery-revamped.tmux`](battery-revamped.tmux) | The entry point TPM runs |
-| [`src/battery.sh`](src/battery.sh) | The script the placeholders, keys and popups call |
-| [`src/lib/battery/`](src/lib/battery) | This member's modules |
-| [`src/lib/utils/constants.sh`](src/lib/utils/constants.sh) | This member's constants, including its version |
-| [`src/lib/utils/`](src/lib/utils), [`src/lib/tmux/`](src/lib/tmux) | The shared library. Every file there except `constants.sh` is identical in every member |
-| [`test/`](test) | The bats suite. `helpers.bash` and `tmux_helpers.bash` are identical in every member; this member's own mocks go in the `_local` files. [`test/entry/keys.bats`](test/entry/keys.bats) presses the popup key through a second tmux attached to a private server, with stand-ins for `pmset` and `acpi` |
+| [`battery-revamped.tmux`](battery-revamped.tmux) | The entry point TPM runs: it runs `bin/battery-revamped apply` |
+| [`bin/battery-revamped`](bin/battery-revamped) | The command: `apply`, `list`, `status`, `refresh`, `card`, `popup`, `popup-card`, `daemon`, `doctor`, `version`, `help` and the menu. `apply`, `status`, `popup` and `daemon` run without loading the interface modules |
+| [`lib/battery.sh`](lib/battery.sh) | Reading the settings and the stored reading, the readers for both systems, the drain rate, the history, the alerts, the placeholders with their labels and widths, the publisher's tick, the popup and the binding |
+| [`lib/state.sh`](lib/state.sh) | Every global, including `BATTERY_REVAMPED_SETTINGS`, the table of setting names and defaults, `BATTERY_REVAMPED_LIVE`, the names of the options that hold the reading, and `BATTERY_REVAMPED_KINDS` |
+| [`lib/core.sh`](lib/core.sh) | The version |
+| [`lib/`](lib) | Every other file is the shared library, identical in every member |
+| [`test/readers.bats`](test/readers.bats), [`test/battery.bats`](test/battery.bats), [`test/plan.bats`](test/plan.bats), [`test/commands.bats`](test/commands.bats) | The readers on both systems with stand-ins for `pmset`, `system_profiler`, `ioreg`, `acpi`, `osascript` and `notify-send` and fixture folders for `/sys/class/power_supply`, every placeholder with its labels and widths, the drain rate, the history, the alerts and notifications, the binding with both render modes, the daemon and the popup, and every command, against a stand-in tmux from [`test/battery_helpers.bash`](test/battery_helpers.bash) that keeps options in a file |
+| [`test/entrypoint.bats`](test/entrypoint.bats), [`test/keys.bats`](test/keys.bats) | The plugin on a private tmux server, with the popup key pressed through a second tmux attached to it, in both render modes; both share [`test/server_helpers.bash`](test/server_helpers.bash), whose stand-ins give the same figures on macOS and Linux |
+| [`test/cli.bats`](test/cli.bats), [`test/golden.bats`](test/golden.bats), [`test/install.bats`](test/install.bats), [`test/core.bats`](test/core.bats), [`test/set-version.bats`](test/set-version.bats) | The interface, the golden transcripts in [`test/golden/`](test/golden), the install target with the completions, the version constant and the version script |
+| [`screens/`](screens) | The tapes and the recording's tmux config. `prepare.sh` copies the plugin to a neutral folder and writes stand-ins for `pmset`, `system_profiler`, `ioreg` and `osascript`, plus a `state` command that sets the one state the stand-in `pmset` reports |
+| [`examples/`](examples) | A status line to copy |
 
 ## Names
 
-- Settings are tmux options named `@battery_revamped_<setting>`.
-- Placeholders include `#{battery_percentage}`.
-- Public functions carry `battery_`; private ones start with `_`.
+- Settings are the tmux options `@battery_revamped_<setting>` listed in `BATTERY_REVAMPED_SETTINGS`, the long options with dashes, such as `--drain-rate-format`, and the environment variables `BATTERY_REVAMPED_<SETTING>`. `@battery_revamped_graph_width` is both the number of cells of the bar and the width the graph is padded to.
+- The stored reading is `@battery_revamped_percent`, `_status`, `_remain`, `_watts`, `_cycles`, `_health`, `_drain_rate`, `_history`, `_alert_level`, `_snap_pct` and `_snap_ts`, with `_percent_ts`, `_detail_ts`, `_percent_lock` and `_percent_lock_ts`. `apply` writes `@battery_revamped_published`, the daemon `@battery_revamped_out_<name>` and `@battery_revamped_ticker_pid`. None of them is a setting.
+- The placeholders are `#{battery_percentage}`, `#{battery_icon}`, `#{battery_icon_charge}`, `#{battery_icon_status}`, `#{battery_color_fg}`, `#{battery_color_bg}`, `#{battery_color_charge_fg}`, `#{battery_color_charge_bg}`, `#{battery_color_status_fg}`, `#{battery_color_status_bg}`, `#{battery_graph}`, `#{battery_remain}`, `#{battery_charging_watts}`, `#{battery_cycles}`, `#{battery_health}`, `#{battery_drain_rate}`, `#{battery_estimate}`, `#{battery_sparkline}`, `#{battery_power_source}` and `#{battery_alert_icon}`; `status` names each one without the `battery_`.
 - The version constant is `BATTERY_REVAMPED_VERSION`.
-- Its command-line tool, once it exists, is `battery-revamped`.
+- The command's own functions and the library's never share a name, because the command is sourced after the library and would replace it.
+- `REVAMPED_TEST_SYS` is a test switch that moves the folder the sysfs reader globs from `/sys`.
 
 ## Behaviour
 
-- Shows battery charge, state, remaining time, watts, cycle count and health in the status line, without blocking the render.
-- `M-b` opens the detail popup, a card of the cached reading; with nothing cached yet the card reads the battery first, and on a machine without a battery it says so.
-- By default each placeholder becomes a `#()` call that prints the cached value at once; a value older than `@battery_revamped_interval` also starts one background refresh, guarded by a lock so parallel calls start no second one. With `@battery_revamped_render` set to `options`, each placeholder becomes an option read such as `#{E:@battery_revamped_out_percentage}`, and one background process per server writes every value in a single tmux call, then exits when the server stops or a config reload starts a newer one.
+- `apply` reads every setting and the stored reading with one `tmux display-message` call and one `env` read, reads the prefix table once, and sends the binding and the replaced status strings in one tmux call. When that call fails, it sends each command alone and `apply` exits 1.
+- In `jobs` mode each placeholder in `status-left` or `status-right` becomes `#(<tool> status <name>)`, with the tool's path and every carried value quoted for a shell and every `#` and `%` doubled, since tmux reads the status line as a format and as a time format. In `options` mode it becomes `#{E:@battery_revamped_out_<name>}`, `apply` starts the daemon, and a status refresh starts no process. A render mode other than `options` means `jobs`. A string already rewritten is not written again, and the names it uses stay in `@battery_revamped_published`, so loading twice changes nothing.
+- `status` makes one tmux read and one `date` call, and prints the stored reading at once. Only when the reading is older than `@battery_revamped_interval` and no reading is under way does it start one in the background through the shared cache module. A name that is no placeholder prints nothing and exits 0, as the bash dispatcher did; a missing name is a usage error.
+- A reading stores the charge and the state every time, and the remaining time, the watts, the cycles and the health only when `@battery_revamped_detail_interval` seconds have passed since they were last read. It then updates the drain rate, the sparkline history and the alert level, and everything is written in one tmux call.
+- The daemon is the shared ticker: it claims `@battery_revamped_ticker_pid`, reads and publishes every name in `@battery_revamped_published` in one tmux call per tick, sleeps for the interval, and ends when another process holds the claim or the server is gone. At the ticker's tick cap it starts itself again.
+- `M-b` opens the popup of `@battery_revamped_popup_width` by `@battery_revamped_popup_height`, running `popup-card`, which prints the card of the stored reading, reading the battery first when nothing is stored, then waits for one key. A tmux older than 3.2 gets a message that says so. `popup` returns 0 whatever the popup returns.
+- A key set to `off` binds nothing. Only the default key is skipped when someone else holds it, and `doctor` names it; a key the person names is bound whoever holds it.
+- A setting `apply` got from the command line or the environment rides, as an option, on the popup key, on the popup's command and on every status call; `BATTERY_REVAMPED_CARRIED` lists the ones that ride. The daemon inherits the environment of the `apply` that started it.
+- A tmux option set to nothing means its default, as FAMILY.md says. The bash version kept it empty when its default was not empty, so an empty `@battery_revamped_percentage_format`, label, icon or graph cell used to print nothing; give that empty value on the command line or in the environment now, where it is used as given.
 
 ## Domain rules
 
-- Linux reads the first `/sys/class/power_supply/BAT*`, then `acpi`; macOS reads `pmset`, `system_profiler` and `ioreg`. The README's source table names each value's source per platform, and a new source goes into that table and into `doctor` in the same change.
-- The drain rate compares the current charge with a reading at least five minutes old, and `#{battery_estimate}` divides the charge left by that rate.
-- Notifications fire once per crossing into low, critical or full, through the shared notifier behind `@battery_revamped_notify`, off by default.
+- Linux reads the first `/sys/class/power_supply/BAT*` that has a readable `capacity`, then `acpi`; macOS reads `pmset`, `system_profiler` and `ioreg`; any other system takes the Linux way for the charge, the state and the remaining time, and reads no watts, cycles or health. The README's source table names each value's source per platform, and a new source goes into that table and into `doctor` in the same change.
+- The charge is the first percent of `pmset -g batt`, the `capacity` file, or the first percent of the first `acpi -b` line; a `capacity` that is not a whole number reads no battery and does not fall back to `acpi`. The state is the lower-cased second field of the `pmset` line with the percent, the `status` file, or the first `acpi` line: `not charging` and the `pending` states are `attached`, then `discharging`, `charging`, `charged` or `full`, and anything else is `unknown`.
+- The remaining time is the first `H:MM` of `pmset`, then of the first `acpi` line, then computed on Linux from `energy_now` or `charge_now` over `power_now` or `current_now` while discharging, or from the gap to `energy_full` or `charge_full` while charging; a zero rate, a missing counter or another state leaves it empty. The watts are `power_now` over a million on Linux and the first number of the `Wattage` line of `system_profiler` on macOS. The cycle count is `cycle_count` or `CycleCount`. The health is `energy_full` over `energy_full_design`, else the `charge_*` pair, or `AppleRawMaxCapacity`, else `MaxCapacity`, over `DesignCapacity`, as a whole percent capped at 100.
+- The drain rate compares the charge with the one stored at least five minutes ago, or at a later clock time, and is the drop in percent per hour with one decimal; two readings in one second keep the previous rate. `#{battery_estimate}` is the charge over a positive rate while discharging and the charge missing over a negative rate while charging, as `H:MM` rounded to the minute.
+- The tier is the charge times eight over a hundred rounded up, from 1 to 8, and a charge that is no number is tier 1. The alert level is `critical` at or under `@battery_revamped_critical_threshold` and `low` at or under `@battery_revamped_low_threshold` while discharging, `full` when charged or at 100 while charging, `ok` otherwise and `unknown` without a charge; a threshold that is no number means 10 or 20.
+- The history keeps the newest `@battery_revamped_history_size` charges, comma separated, with 16 for zero or junk; the sparkline draws one of eight blocks per charge at the charge times seven over a hundred.
+- Notifications fire once per crossing into low, critical or full, through the shared notifier behind `@battery_revamped_notify`, off by default. The level is stored on every reading, so a notification fires again only after the level changed.
+- The label, the width and the padding follow the bash rules: a value is wrapped by `before` and `after` first, then padded to its own width or, with `@battery_revamped_fixed_width` at `on`, to four characters for the charge, then labelled; the graph pads to `@battery_revamped_graph_width`; width counts characters and a longer value is never cut. `@battery_revamped_hide_on_ac` at `1` empties every placeholder unless the state is `discharging`.
 - A value the host has no source for renders empty.
+- An icon, a label or a text set to `off` prints nothing, and a label set to `off` also drops the `nerd` glyph.
 
 ## Release
 
-- `BATTERY_REVAMPED_VERSION` in [`src/lib/utils/constants.sh`](src/lib/utils/constants.sh) holds the version. Nobody edits it by hand.
-- After a green `Tests` run on `main`, [`release.yml`](.github/workflows/release.yml) runs semantic-release from [`.releaserc.json`](.releaserc.json): a `feat` or `fix` since the last tag publishes a release, [`set-version.sh`](.github/scripts/set-version.sh) stamps the constant, and the notes go into [`CHANGELOG.md`](CHANGELOG.md).
+- `BATTERY_REVAMPED_VERSION` in [`lib/core.sh`](lib/core.sh) holds the version. Nobody edits it by hand.
+- After a green `ci` run on `main`, [`release.yml`](.github/workflows/release.yml) runs semantic-release: a `feat` or `fix` since the last tag publishes a release, [`set-version.sh`](.github/scripts/set-version.sh) stamps the constant, and the notes go into [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Gaps against FAMILY.md
 
-As of 2026-11-19:
+As of 2026-11-20:
 
-- Every script is bash, under `#!/usr/bin/env bash`, not POSIX `sh`, so it is untested under `dash`, `zsh` and BusyBox `sh`.
-- The code lives in [`src/`](src) and [`src/lib/`](src/lib); there is no `bin/battery-revamped`, `lib/state.sh` or `lib/core.sh`.
-- No `battery-revamped` command with `help`, `version` and `doctor` in the family's form, no man page, no completions and no `manifest.json`.
-- No gum interface: no `lib/ui.sh`, `lib/table.awk`, themes or `test/bin/gum`.
-- No `screens/`: no VHS recording of each feature, no on-screen caption of the keys each recording presses, and no recordings in the README.
-- The README sections are not the family's order of Quick start, Usage, topic sections, Portability, Development and License.
-- Coverage is kcov with a 95 percent floor on Linux, not bashcov at 100 percent merged from macOS and Linux.
-- CI tests GNU, BSD and uutils tools in `tests.yml`, but not the six toolsets through `.github/scripts/toolset.sh`, and no shell matrix under `sh`, `dash`, `bash` and `zsh`.
-- No golden transcripts, `call.sh`, `run-matrix.sh` or `linux-container.sh`.
-- [`release.yml`](.github/workflows/release.yml) follows `Tests` and has no `recover` job, and [`.releaserc.json`](.releaserc.json) and `set-version.sh` name `src/lib/utils/constants.sh`, so the three differ from the family's copies; there is no `ci-state.sh`, `recover.sh`, `bot-merge.yml` or Renovate.
-- CI is `tests.yml` and `security.yml`, not `ci.yml`, and no job starts with `step-security/harden-runner`.
-- No `.editorconfig`, `.yamllint.yml` or shfmt; the Makefile has `help`, `test`, `test-unit`, `coverage`, `lint` and `clean`, not the family's targets.
-- `get_tmux_option` keeps a tmux option set to nothing as an empty value, where FAMILY.md has it mean the default; the ticker's own reader already takes the default.
-- The status jobs carry the checkout path with each `#` doubled but not each `%`, so a path holding `%` reaches the job as a time format; the POSIX rewrite doubles both, as FAMILY.md says under Output.
+- The screens are written and not recorded: `screens/hero.gif` and every still the README names do not exist until `make screens` runs on macOS.
+- Coverage has not been measured: bashcov was not run for this rewrite, so the 100 percent gate on macOS and Linux is unverified.
+- Only `make test` under the system `sh` and `make lint` ran for this rewrite. The shell matrix, `make test-linux` and the six toolsets have not run.
+- The Linux readers are tested against fixture folders and stand-ins, not against Linux hardware, and the macOS readers against one Mac.
+- The popup default height is 16, where the bash version used 12, because the card drawn with gum has a header and a border; the popup card shows the seven figures of the old card.

@@ -1,0 +1,3 @@
+$ battery-revamped
+battery-revamped: no command given. run 'battery-revamped help' for usage.
+exit 1

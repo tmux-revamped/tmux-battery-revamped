@@ -4,339 +4,438 @@
 
 <strong>tmuxのステータスバーに電池の状態を表示し、ステータスの描画を一切止めません。</strong>
 
-[English](README.md) | 日本語 | [简体中文](README.zh-Hans.md) | [繁體中文（香港）](README.zh-HK.md)
+[English](README.md) &nbsp;|&nbsp; 日本語 &nbsp;|&nbsp; [简体中文](README.zh-Hans.md) &nbsp;|&nbsp; [繁體中文（香港）](README.zh-HK.md)
 
-[![family](https://img.shields.io/github/actions/workflow/status/tmux-revamped/tmux-battery-revamped/family.yml?branch=main&style=flat-square&label=family)](https://github.com/tmux-revamped/tmux-battery-revamped/actions/workflows/family.yml)
-[![tests](https://img.shields.io/github/actions/workflow/status/tmux-revamped/tmux-battery-revamped/tests.yml?branch=main&style=flat-square&label=tests)](https://github.com/tmux-revamped/tmux-battery-revamped/actions/workflows/tests.yml)
+[![ci](https://img.shields.io/github/actions/workflow/status/tmux-revamped/tmux-battery-revamped/ci.yml?branch=main&style=flat-square&label=ci)](https://github.com/tmux-revamped/tmux-battery-revamped/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/tmux-revamped/tmux-battery-revamped?style=flat-square&label=release)](https://github.com/tmux-revamped/tmux-battery-revamped/releases/latest)
 [![openssf scorecard](https://img.shields.io/ossf-scorecard/github.com/tmux-revamped/tmux-battery-revamped?style=flat-square&label=openssf%20scorecard)](https://scorecard.dev/viewer/?uri=github.com/tmux-revamped/tmux-battery-revamped)
 [![license](https://img.shields.io/github/license/tmux-revamped/tmux-battery-revamped?style=flat-square&label=license)](LICENSE)
 
 <p align="center">
-  <a href="#what-it-does">機能</a> |
-  <a href="#requirements">動作要件</a> |
-  <a href="#installation">インストール</a> |
-  <a href="#usage">使い方</a> |
-  <a href="#configuration">設定</a> |
-  <a href="#key-bindings">キーバインド</a> |
-  <a href="#how-it-works">仕組み</a>
+  <a href="#クイックスタート"><strong>クイックスタート</strong></a> &nbsp;|&nbsp;
+  <a href="#使い方">使い方</a> &nbsp;|&nbsp;
+  <a href="#仕組み">仕組み</a> &nbsp;|&nbsp;
+  <a href="#画面">画面</a>
 </p>
 
 </div>
 
-プレースホルダー**20**個。描画モード**2**種類。システムの情報源**5**種類：`pmset`、`system_profiler`、`ioreg`、`/sys/class/power_supply`、`acpi`。CIはLinuxとmacOSの**10**通りのツールチェーンの組み合わせでテストを実行します。
+<p align="center">
+  <img src="screens/hero.gif" alt="段階ごとの色で電池残量と状態、残り時間を表示し、低い残量と危険な残量に下がり、カードのポップアップを開き、Nerd Font のラベル、スパークライン、options 描画モードに切り替える battery-revamped" width="800">
+</p>
+
+```console
+$ battery-revamped refresh
+Refreshed. 100% charge, charged.
+$ battery-revamped status percentage
+100%
+```
+
+プレースホルダー **20** 個、描画モード **2** つ、macOS と Linux、tmux **3.2** 以降。
 
 ---
 
-<a id="what-it-does"></a>
+## クイックスタート
 
-## 機能
-
-`status-left`と`status-right`の`#{battery_*}`プレースホルダーを、ノートパソコンの電池の残量、状態、残り時間、ワット数、充放電回数、劣化度、消費速度、残量の履歴に置き換えます。どのプレースホルダーもtmuxのオプションにキャッシュされた値を読みます。電池のツールはバックグラウンドで動くため、遅い`pmset`や`system_profiler`の呼び出しでステータスラインが遅れることはありません。ディスクには何も書き込みません。
-
-残量が少ないとき、非常に少ないとき、満充電のときにデスクトップ通知を送ることもでき、`prefix + M-b`で詳細ポップアップを開きます。
-
-<a id="requirements"></a>
-
-## 動作要件
+### 前提条件
 
 | ツール | バージョン | 用途 |
-|:-----|:--------|:-----------|
-| tmux | 3.2以降 | 詳細ポップアップの`display-popup` |
-| bash | 3.2以降 | macOSの`/bin/bash`を含むすべてのスクリプト |
-| `acpi` | 任意 | Linuxで任意。残量と残り時間の代替手段 |
-| `osascript`または`notify-send` | 任意 | 任意。デスクトップ通知 |
+|:-----|:-----|:-----|
+| tmux | 3.2 以降 | ファミリー共通の最低バージョン。ポップアップにも必要です |
+| gum | 任意 | `battery-revamped` のメニュー、表、色。なくてもすべてのコマンドがプレーンテキストで動きます |
+| `osascript`、`notify-send` | 任意 | `@battery_revamped_notify` が `1` のときのデスクトップ通知 |
 
-| 値 | Linux、x86_64とarm64 | macOS、IntelとApple Silicon |
-|:------|:------------------------|:-------------------------------|
-| 残量と状態 | 最初の`/sys/class/power_supply/BAT*`、次に`acpi` | `pmset` |
-| 残り時間 | `acpi`、次に`/sys`のエネルギーまたは電荷のカウンターから計算 | `pmset` |
-| ワット数 | `power_now`、現在の消費電力 | `system_profiler`、充電器の定格ワット数 |
-| 充放電回数 | `cycle_count` | `ioreg` |
-| 劣化度 | `energy_full`と`energy_full_design`の比、次に`charge_*`の組 | `ioreg`、`AppleRawMaxCapacity`と`DesignCapacity`の比 |
+Linux と macOS で、BSD、GNU、uutils、BusyBox のいずれのツールでも動作します。各値は OS に付属するものから取得します。
 
-ホストに情報源がない値は空で表示されます。このホストで使える情報源は`src/battery.sh doctor`で確認できます。
+| 値 | Linux | macOS |
+|:-----|:-----|:-----|
+| 残量と状態 | `capacity` を読める最初の `/sys/class/power_supply/BAT*`、次に `acpi` | `pmset` |
+| 残り時間 | `acpi`、次に `energy_now` か `charge_now` のカウンターからの計算 | `pmset` |
+| ワット数 | 現在の消費電力 `power_now` | `system_profiler`、充電器の定格ワット数 |
+| サイクル数 | `cycle_count` | `ioreg` |
+| 健全性 | `energy_full` を `energy_full_design` で割った値、次に `charge_*` の組 | `ioreg`、`AppleRawMaxCapacity` を `DesignCapacity` で割った値 |
 
-<a id="installation"></a>
+取得元がない値のプレースホルダーは空になり、`battery-revamped doctor` が名前を挙げます。電池のないマシンでは何も表示しません。
 
-## インストール
+### インストール
 
-### TPMでインストール
-
-`~/.tmux.conf`にプラグインとプレースホルダーを追加し、`prefix + I`を押します。
+[TPM](https://github.com/tmux-plugins/tpm) を使う場合は、プラグインを `~/.tmux.conf` に追加して `prefix + I` を押します。
 
 ```tmux
 set -g @plugin 'tmux-revamped/tmux-battery-revamped'
-set -g status-right '#{battery_icon_status} #{battery_percentage} #{battery_remain}'
 ```
 
-### 手動インストール
+手動でインストールする場合は、リポジトリをクローンして `~/.tmux.conf` からエントリポイントを実行します。
 
 ```bash
 git clone https://github.com/tmux-revamped/tmux-battery-revamped ~/.tmux/plugins/tmux-battery-revamped
 ```
 
-次の行を`~/.tmux.conf`の`status-left`と`status-right`を設定する行より後に追加し、tmuxを再読み込みします。
-
 ```tmux
 run-shell ~/.tmux/plugins/tmux-battery-revamped/battery-revamped.tmux
 ```
 
-<a id="usage"></a>
+プラグインを読み込む前に `status-left` か `status-right` を設定してください。プラグインは、そこにあるプレースホルダーを読み込み時に 1 回だけ置き換えます。
+
+クローンで `make install` を実行すると、`battery-revamped` が `~/.local/bin` に、man ページと補完が `~/.local/share` に入ります。
+
+### 確認
+
+```bash
+~/.tmux/plugins/tmux-battery-revamped/bin/battery-revamped doctor
+```
 
 ## 使い方
 
-`status-left`か`status-right`にプレースホルダーを書きます。プラグインは読み込み時にそれを置き換えます。完全な例は[`examples/status-right.tmux.conf`](examples/status-right.tmux.conf)にあります。
+このプラグインは、ノート PC の電池残量を、状態、残り時間、ワット数、サイクル数、健全性、減少率、見積もり、最近の残量のスパークラインとともに表示します。ステータスラインは tmux がすでに持っている値を表示し、バックグラウンドの読み取りがそれを更新します。
+
+| プレースホルダー | 出力 |
+|:-----|:-----|
+| `#{battery_percentage}` | 電池残量で、たとえば`83%`です |
+| `#{battery_icon}` | 現在の残量段階のアイコンです |
+| `#{battery_icon_charge}` | `#{battery_icon}` と同じアイコンです |
+| `#{battery_icon_status}` | 現在の状態のアイコンです |
+| `#{battery_color_fg}` | 現在の状態の前景のスタイルです |
+| `#{battery_color_bg}` | 現在の状態の背景のスタイルです |
+| `#{battery_color_charge_fg}` | 現在の残量段階の前景のスタイルです |
+| `#{battery_color_charge_bg}` | 現在の残量段階の背景のスタイルです |
+| `#{battery_color_status_fg}` | `#{battery_color_fg}` と同じスタイルです |
+| `#{battery_color_status_bg}` | `#{battery_color_bg}` と同じスタイルです |
+| `#{battery_graph}` | 残量バーで、たとえば`█████░░░░░`です |
+| `#{battery_remain}` | システムが報告する残り時間で、たとえば`4:32`です |
+| `#{battery_charging_watts}` | ワット数で、たとえば`45W`です |
+| `#{battery_cycles}` | 充放電サイクル数です |
+| `#{battery_health}` | 満充電容量を設計容量で割った値で、たとえば`96%`です |
+| `#{battery_drain_rate}` | 5 分以上の間隔で測った 1 時間あたりの減少率で、たとえば`12.5%/h`です |
+| `#{battery_estimate}` | 減少率から計算した残り時間で、たとえば`2:00`です |
+| `#{battery_sparkline}` | 最近の残量のスパークラインで、たとえば`▇▇▆▆▅`です |
+| `#{battery_power_source}` | `AC`、放電中は`Bat`です |
+| `#{battery_alert_icon}` | 放電中に残量が低いか危険な間表示する記号で、それ以外は空です |
+
+状態は `charged`、`charging`、`discharging`、`attached`、`unknown` のいずれかです。`attached` は AC 電源につながっていて充電していない状態です。
+
+ステータスラインにプレースホルダーを置きます。
 
 ```tmux
+set -g @battery_revamped_status_discharging_fg_color '#[fg=yellow]'
+set -g @battery_revamped_status_charging_fg_color '#[fg=green]'
+
 set -g status-right '#{battery_color_status_fg}#{battery_icon_status} #{battery_percentage}#[default] #{battery_graph} #{battery_remain} '
 ```
 
-| プレースホルダー | 出力 |
-|:------------|:-------|
-| `#{battery_percentage}` | 残量。例：`83%` |
-| `#{battery_icon}`、`#{battery_icon_charge}` | 現在の残量段階のアイコン |
-| `#{battery_icon_status}` | 現在の状態のアイコン |
-| `#{battery_color_fg}`、`#{battery_color_bg}` | 現在の状態の色 |
-| `#{battery_color_status_fg}`、`#{battery_color_status_bg}` | 現在の状態の色 |
-| `#{battery_color_charge_fg}`、`#{battery_color_charge_bg}` | 現在の残量段階の色 |
-| `#{battery_graph}` | 残量のバー。例：`████████░░` |
-| `#{battery_remain}` | システムが報告する残り時間。例：`4:32` |
-| `#{battery_estimate}` | 消費速度から計算した残り時間。例：`2:00` |
-| `#{battery_charging_watts}` | ワット数。例：`45W` |
-| `#{battery_cycles}` | 充放電回数 |
-| `#{battery_health}` | 設計容量に対する満充電容量。例：`96%` |
-| `#{battery_drain_rate}` | 5分以上の間隔で測った1時間あたりの減少率。例：`12.5%/h` |
-| `#{battery_sparkline}` | 最近の残量の推移。例：`▇▇▆▆▅` |
-| `#{battery_power_source}` | `AC`または`Bat` |
-| `#{battery_alert_icon}` | 放電中に残量が少ないか非常に少ないときの記号 |
+オプションをいくつか足した同じ例が [examples/status-right.tmux.conf](examples/status-right.tmux.conf) にあります。
 
-状態は`charged`、`charging`、`discharging`、`attached`、`unknown`のいずれかです。`attached`はAC電源につながっていて充電していない状態です。
+### ラベルと幅
 
-<a id="configuration"></a>
+`@battery_revamped_<metric>_label` は、値が空でないときだけ、1 つの指標の前にアイコンや語を表示します。`@battery_revamped_icons` を `nerd` にすると、下の各指標に Nerd Font の記号のラベルが付きます。指標ごとのラベルはこのセットより優先されます。tmux で空にしたラベルは既定値を意味するので記号は残ります。ラベルも記号も出さないには、ラベルを `off` にします。`off` は `@battery_revamped_low_icon` や `@battery_revamped_graph_full` など、どのアイコンやテキストのオプションも隠します。既定の `ascii` はラベルを付けません。
 
-## 設定
+| 指標 | `nerd` の記号 |
+|:-----|:-----|
+| `percentage` | U+F0079 |
+| `graph` | U+F07B1 |
+| `remain` | U+F051F |
+| `charging_watts` | U+F0241 |
+| `cycles` | U+F04E6 |
+| `health` | U+F05F6 |
+| `drain_rate` | U+F0533 |
+| `estimate` | U+F051F |
+| `sparkline` | U+F07B1 |
+| `power_source` | U+F06A5 |
 
-| オプション | 既定値 | 意味 |
-|:-------|:--------|:--------|
-| `@battery_revamped_interval` | `15` | 残量と状態の読み取りを新しいとみなす秒数 |
-| `@battery_revamped_detail_interval` | `60` | 残り時間、ワット数、充放電回数、劣化度を新しいとみなす秒数 |
-| `@battery_revamped_render` | 空 | `options`でオプション描画モードにする。[仕組み](#how-it-works)を参照 |
-| `@battery_revamped_percentage_format` | `%s%%` | 残量のprintf書式 |
-| `@battery_revamped_charge_tier{1..8}_icon` | `▁`から`█` | 残量段階ごとのアイコン。段階1が最も低い |
-| `@battery_revamped_charge_tier{1..8}_{fg,bg}_color` | 空 | 残量段階ごとの色 |
-| `@battery_revamped_status_{charged,charging,discharging,attached,unknown}_icon` | `=`、`+`、`-`、`!`、`?` | 状態ごとのアイコン |
-| `@battery_revamped_status_{state}_{fg,bg}_color` | 空 | 状態ごとの色 |
-| `@battery_revamped_icons` | `ascii` | `nerd`で8段階にNerd Fontの電池記号を使い、充電中は充電用の記号にし、すべての指標にラベルを付ける。段階ごとのアイコンの設定が優先 |
-| `@battery_revamped_graph_width` | `10` | 残量バーのセル数 |
-| `@battery_revamped_graph_full` | `█` | 埋まったセル |
-| `@battery_revamped_graph_empty` | `░` | 空のセル |
-| `@battery_revamped_remain_format` | `%s` | 2つの残り時間プレースホルダーの書式 |
-| `@battery_revamped_watts_format` | `%sW` | ワット数の書式 |
-| `@battery_revamped_cycles_format` | `%s` | 充放電回数の書式 |
-| `@battery_revamped_health_format` | `%s%%` | 劣化度の書式 |
-| `@battery_revamped_drain_rate_format` | `%s%%/h` | 消費速度の書式 |
-| `@battery_revamped_history_size` | `16` | 推移グラフに残す読み取りの数 |
-| `@battery_revamped_low_threshold` | `20` | 放電中に少ないとみなす残量のパーセント |
-| `@battery_revamped_critical_threshold` | `10` | 放電中に非常に少ないとみなす残量のパーセント |
-| `@battery_revamped_low_icon`、`@battery_revamped_critical_icon` | 空 | `#{battery_alert_icon}`の記号 |
-| `@battery_revamped_source_ac_label`、`@battery_revamped_source_battery_label` | `AC`、`Bat` | `#{battery_power_source}`の文字列 |
-| `@battery_revamped_hide_on_ac` | `0` | `1`で、電池が放電中でない間はすべてのプレースホルダーを空にする |
-| `@battery_revamped_before`、`@battery_revamped_after` | 空 | `#{battery_percentage}`が表示されるときだけ前後に置く文字列。`{icon}`は残量のアイコン、`{color}`は残量段階の色になる |
-| `@battery_revamped_<metric>_label` | 空 | 値が空でないときに1つの指標の値の前に出す文字列。`''`で`nerd`のラベルを消す |
-| `@battery_revamped_fixed_width` | `off` | `on`で各値を最大幅まで左側に詰め物をする |
-| `@battery_revamped_<metric>_width` | 空 | 1つの指標の幅。固定幅より優先 |
-| `@battery_revamped_notify` | `0` | `1`で残量が少ない、非常に少ない、満充電になったときにデスクトップ通知を送る |
-| `@battery_revamped_popup_key` | `M-b` | 詳細ポップアップのprefixキー。`off`で割り当てない |
-| `@battery_revamped_popup_width`、`@battery_revamped_popup_height` | `44`、`12` | ポップアップの大きさ |
+`@battery_revamped_fixed_width` を `on` にすると、残量を自然な幅の 4 文字まで左側で埋めるので、`9%` から `42%` に変わっても行の残りがずれません。`@battery_revamped_<metric>_width` は 1 つの指標の幅を決め、固定幅より優先されます。これより長い値は切りません。
 
-ラベルは`percentage`、`graph`、`remain`、`charging_watts`、`cycles`、`health`、`drain_rate`、`estimate`、`sparkline`、`power_source`に付きます。幅の設定で長い値が切り詰められることはありません。
+### 残量の前後
 
-### テーマの色
+`@battery_revamped_before` と `@battery_revamped_after` は、`#{battery_percentage}` が表示されるときだけ、その前後に文字を置きます。中の `{icon}` は残量アイコン、`{color}` は `#[fg=` の包みを外した残量段階の色になるので、`#[fg={color}]{icon} ` でアイコンに色が付きます。
 
-色のオプションは既定で空のため、設定するまで色は付きません。次の各ブロックは段階1から3を赤、4から6を黄、7から8を緑にし、状態ごとにも色を付けます。
+### 描画モード
 
-<details>
-<summary>Catppuccin Mocha</summary>
-
-```tmux
-set -g @battery_revamped_charge_tier1_fg_color "#[fg=#f38ba8]"
-set -g @battery_revamped_charge_tier2_fg_color "#[fg=#f38ba8]"
-set -g @battery_revamped_charge_tier3_fg_color "#[fg=#f38ba8]"
-set -g @battery_revamped_charge_tier4_fg_color "#[fg=#f9e2af]"
-set -g @battery_revamped_charge_tier5_fg_color "#[fg=#f9e2af]"
-set -g @battery_revamped_charge_tier6_fg_color "#[fg=#f9e2af]"
-set -g @battery_revamped_charge_tier7_fg_color "#[fg=#a6e3a1]"
-set -g @battery_revamped_charge_tier8_fg_color "#[fg=#a6e3a1]"
-set -g @battery_revamped_status_charged_fg_color "#[fg=#a6e3a1]"
-set -g @battery_revamped_status_charging_fg_color "#[fg=#a6e3a1]"
-set -g @battery_revamped_status_discharging_fg_color "#[fg=#f9e2af]"
-set -g @battery_revamped_status_attached_fg_color "#[fg=#89b4fa]"
-set -g @battery_revamped_status_unknown_fg_color "#[fg=#a6adc8]"
-```
-
-</details>
-
-<details>
-<summary>Dracula</summary>
-
-```tmux
-set -g @battery_revamped_charge_tier1_fg_color "#[fg=#ff5555]"
-set -g @battery_revamped_charge_tier2_fg_color "#[fg=#ff5555]"
-set -g @battery_revamped_charge_tier3_fg_color "#[fg=#ff5555]"
-set -g @battery_revamped_charge_tier4_fg_color "#[fg=#f1fa8c]"
-set -g @battery_revamped_charge_tier5_fg_color "#[fg=#f1fa8c]"
-set -g @battery_revamped_charge_tier6_fg_color "#[fg=#f1fa8c]"
-set -g @battery_revamped_charge_tier7_fg_color "#[fg=#50fa7b]"
-set -g @battery_revamped_charge_tier8_fg_color "#[fg=#50fa7b]"
-set -g @battery_revamped_status_charged_fg_color "#[fg=#50fa7b]"
-set -g @battery_revamped_status_charging_fg_color "#[fg=#50fa7b]"
-set -g @battery_revamped_status_discharging_fg_color "#[fg=#f1fa8c]"
-set -g @battery_revamped_status_attached_fg_color "#[fg=#bd93f9]"
-set -g @battery_revamped_status_unknown_fg_color "#[fg=#6272a4]"
-```
-
-</details>
-
-<details>
-<summary>Nord</summary>
-
-```tmux
-set -g @battery_revamped_charge_tier1_fg_color "#[fg=#bf616a]"
-set -g @battery_revamped_charge_tier2_fg_color "#[fg=#bf616a]"
-set -g @battery_revamped_charge_tier3_fg_color "#[fg=#bf616a]"
-set -g @battery_revamped_charge_tier4_fg_color "#[fg=#ebcb8b]"
-set -g @battery_revamped_charge_tier5_fg_color "#[fg=#ebcb8b]"
-set -g @battery_revamped_charge_tier6_fg_color "#[fg=#ebcb8b]"
-set -g @battery_revamped_charge_tier7_fg_color "#[fg=#a3be8c]"
-set -g @battery_revamped_charge_tier8_fg_color "#[fg=#a3be8c]"
-set -g @battery_revamped_status_charged_fg_color "#[fg=#a3be8c]"
-set -g @battery_revamped_status_charging_fg_color "#[fg=#a3be8c]"
-set -g @battery_revamped_status_discharging_fg_color "#[fg=#ebcb8b]"
-set -g @battery_revamped_status_attached_fg_color "#[fg=#81a1c1]"
-set -g @battery_revamped_status_unknown_fg_color "#[fg=#d8dee9]"
-```
-
-</details>
-
-<details>
-<summary>Gruvbox Dark</summary>
-
-```tmux
-set -g @battery_revamped_charge_tier1_fg_color "#[fg=#fb4934]"
-set -g @battery_revamped_charge_tier2_fg_color "#[fg=#fb4934]"
-set -g @battery_revamped_charge_tier3_fg_color "#[fg=#fb4934]"
-set -g @battery_revamped_charge_tier4_fg_color "#[fg=#fabd2f]"
-set -g @battery_revamped_charge_tier5_fg_color "#[fg=#fabd2f]"
-set -g @battery_revamped_charge_tier6_fg_color "#[fg=#fabd2f]"
-set -g @battery_revamped_charge_tier7_fg_color "#[fg=#b8bb26]"
-set -g @battery_revamped_charge_tier8_fg_color "#[fg=#b8bb26]"
-set -g @battery_revamped_status_charged_fg_color "#[fg=#b8bb26]"
-set -g @battery_revamped_status_charging_fg_color "#[fg=#b8bb26]"
-set -g @battery_revamped_status_discharging_fg_color "#[fg=#fabd2f]"
-set -g @battery_revamped_status_attached_fg_color "#[fg=#83a598]"
-set -g @battery_revamped_status_unknown_fg_color "#[fg=#a89984]"
-```
-
-</details>
-
-<details>
-<summary>Tokyo Night</summary>
-
-```tmux
-set -g @battery_revamped_charge_tier1_fg_color "#[fg=#f7768e]"
-set -g @battery_revamped_charge_tier2_fg_color "#[fg=#f7768e]"
-set -g @battery_revamped_charge_tier3_fg_color "#[fg=#f7768e]"
-set -g @battery_revamped_charge_tier4_fg_color "#[fg=#e0af68]"
-set -g @battery_revamped_charge_tier5_fg_color "#[fg=#e0af68]"
-set -g @battery_revamped_charge_tier6_fg_color "#[fg=#e0af68]"
-set -g @battery_revamped_charge_tier7_fg_color "#[fg=#9ece6a]"
-set -g @battery_revamped_charge_tier8_fg_color "#[fg=#9ece6a]"
-set -g @battery_revamped_status_charged_fg_color "#[fg=#9ece6a]"
-set -g @battery_revamped_status_charging_fg_color "#[fg=#9ece6a]"
-set -g @battery_revamped_status_discharging_fg_color "#[fg=#e0af68]"
-set -g @battery_revamped_status_attached_fg_color "#[fg=#7aa2f7]"
-set -g @battery_revamped_status_unknown_fg_color "#[fg=#565f89]"
-```
-
-</details>
-
-<details>
-<summary>Solarized Dark</summary>
-
-```tmux
-set -g @battery_revamped_charge_tier1_fg_color "#[fg=#dc322f]"
-set -g @battery_revamped_charge_tier2_fg_color "#[fg=#dc322f]"
-set -g @battery_revamped_charge_tier3_fg_color "#[fg=#dc322f]"
-set -g @battery_revamped_charge_tier4_fg_color "#[fg=#b58900]"
-set -g @battery_revamped_charge_tier5_fg_color "#[fg=#b58900]"
-set -g @battery_revamped_charge_tier6_fg_color "#[fg=#b58900]"
-set -g @battery_revamped_charge_tier7_fg_color "#[fg=#859900]"
-set -g @battery_revamped_charge_tier8_fg_color "#[fg=#859900]"
-set -g @battery_revamped_status_charged_fg_color "#[fg=#859900]"
-set -g @battery_revamped_status_charging_fg_color "#[fg=#859900]"
-set -g @battery_revamped_status_discharging_fg_color "#[fg=#b58900]"
-set -g @battery_revamped_status_attached_fg_color "#[fg=#268bd2]"
-set -g @battery_revamped_status_unknown_fg_color "#[fg=#586e75]"
-```
-
-</details>
-
-### 内部状態
-
-次のオプションはプラグインが自身で書き込みます。設定しないでください。
-
-| オプション | 内容 |
-|:-------|:------|
-| `@battery_revamped_published` | 読み込み時に`status-left`と`status-right`で見つかった指標。オプションモードで公開するもの |
-| `@battery_revamped_out_<metric>` | オプションモードで公開される各指標の値 |
-| `@battery_revamped_ticker_pid` | オプションモードのバックグラウンドプロセスのpid |
-| `@battery_revamped_option_names` | バックグラウンドプロセスが1周期に1回の呼び出しで読むオプション |
-| `@battery_revamped_alert_level` | 最後に見た段階。`ok`、`low`、`critical`、`full`、`unknown`のいずれかで、通知を境界を越えるたびに1回だけにする |
-| `@battery_revamped_history` | 推移グラフ用の最近の残量 |
-| `@battery_revamped_snap_pct`、`@battery_revamped_snap_ts` | 消費速度を測る基準の読み取り |
-| `@battery_revamped_{percent,status,remain,watts,cycles,health,drain_rate}` | キャッシュされた読み取り。それぞれに`_ts`のタイムスタンプ、`percent`には`_lock`もある |
-
-<a id="key-bindings"></a>
-
-## キーバインド
-
-| キー | 操作 | オプション |
-|:----|:-------|:-------|
-| `prefix + M-b` | 詳細ポップアップを開く | `@battery_revamped_popup_key` |
-
-ポップアップはキャッシュされた残量、状態、残り時間、ワット数、消費速度、充放電回数、劣化度を、電池を再度調べずに表示します。どのキーでも閉じます。`@battery_revamped_popup_key`が空のときは`M-b`を使い、`off`のときは何も割り当てません。
-
-<a id="how-it-works"></a>
-
-## 仕組み
-
-既定のジョブモードでは、各プレースホルダーが[`src/battery.sh`](src/battery.sh)を呼ぶ`#()`になります。呼び出しはキャッシュされた値をすぐに出力します。キャッシュされた残量が`@battery_revamped_interval`より古ければ、バックグラウンドでの更新を1つ開始します。更新はロックで守られ、並行した呼び出しが2つ目を開始することはありません。
-
-tmuxはステータスを描き直すたびにすべての`#()`を実行します。1つのバーに複数のプラグインがあると、およそ1秒に1回になります。オプションモードはこの呼び出しをなくします。
+既定では各プレースホルダーが `#()` 呼び出しになり、tmux がステータスの再描画のたびに再実行します。`@battery_revamped_render` を `options` にすると、各プレースホルダーが `#{E:@battery_revamped_out_percentage}` のようなオプションの読み取りになります。サーバーごとに 1 つのバックグラウンドプロセスが `@battery_revamped_interval` 秒ごとに電池を読み取り、すべての値を 1 回の tmux 呼び出しで書き込むので、値は一緒に変わります。
 
 ```tmux
 set -g @battery_revamped_render 'options'
 set -g @battery_revamped_fixed_width 'on'
 ```
 
-各プレースホルダーは`#{E:@battery_revamped_out_percentage}`のようなオプションの読み取りになります。サーバーごとに1つのバックグラウンドプロセスが`@battery_revamped_interval`秒ごとに電池を読み、ステータスラインが使うすべての値を1回のtmux呼び出しで書き込み、1回だけ再描画します。このプロセスはサーバーが止まるか、設定の再読み込みで後継が起動すると終了します。ジョブモードに戻すと解放されます。
+### 通知
 
-消費速度は現在の残量を5分以上前の読み取りと比べます。`#{battery_estimate}`は残りの残量をその速度で割ります。通知は少ない、非常に少ない、満充電の各段階に入るたびに1回だけ、macOSでは`osascript`、Linuxでは`notify-send`で送ります。
+`@battery_revamped_notify` を `1` にすると、残量が低、危険、満充電になったときにデスクトップ通知を 1 回送ります。macOS では `osascript`、Linux では `notify-send` を使います。境目を越えるたびに 1 回だけ通知します。既定は `0` で、状態は常にステータスラインとカードに表示されます。
 
-<a id="development"></a>
+### 段階ごとの色
+
+色のオプションは既定で空なので、設定するまで色のプレースホルダーは何も表示しません。次のパレットは、段階 1 から 3 を赤、4 から 6 を黄、7 と 8 を緑に割り当てます。
+
+| テーマ | 低 | 中 | 高 |
+|:-----|:-----|:-----|:-----|
+| Catppuccin Mocha | `#f38ba8` | `#f9e2af` | `#a6e3a1` |
+| Dracula | `#ff5555` | `#f1fa8c` | `#50fa7b` |
+| Nord | `#bf616a` | `#ebcb8b` | `#a3be8c` |
+| Gruvbox Dark | `#fb4934` | `#fabd2f` | `#b8bb26` |
+| Tokyo Night | `#f7768e` | `#e0af68` | `#9ece6a` |
+| Solarized Dark | `#dc322f` | `#b58900` | `#859900` |
+
+各値は段階ごとにスタイルに入れます。たとえば `set -g @battery_revamped_charge_tier1_fg_color '#[fg=#f38ba8]'` です。状態にも `@battery_revamped_status_<state>_fg_color` で同じスタイルを使えます。
+
+| コマンド | 動作 |
+|:-----|:-----|
+| `battery-revamped apply` | ポップアップのキーをバインドしてプレースホルダーを今すぐ埋めます。tmux がプラグインを読み込むときにエントリポイントが実行します |
+| `battery-revamped list` | `apply` が送るコマンドをすべて表示し、何も変更しません。`--json` は 1 つのオブジェクトを出力します |
+| `battery-revamped status NAME` | `percentage`、`remain`、`graph` などのプレースホルダーを 1 つ表示します。ステータスラインが実行します。プレースホルダーでない名前は何も表示しません |
+| `battery-revamped refresh` | 電池を今すぐ読み取り、現在の状態を伝えます |
+| `battery-revamped card` | 保存済みの読み取りを 1 つの値につき 1 行で表示します。何も保存されていなければ先に電池を読み取ります |
+| `battery-revamped popup` | tmux のポップアップでカードを開きます。ポップアップのキーが実行します |
+| `battery-revamped popup-card` | カードを表示してキー入力を待ちます。ポップアップが実行するのはこれです |
+| `battery-revamped daemon` | options 描画モードのために、ティックごとにプレースホルダーを公開します。`apply` が起動します |
+| `battery-revamped doctor` | 依存関係ごとに 1 行を表示します。各値の取得元のツールやファイル、ポップアップ、設定、通知手段、使わずに残したキーです |
+| `battery-revamped version` | バージョンと tmux のバージョンを表示します |
+| `battery-revamped help` | ヘルプページです。`man battery-revamped` も同じコマンドと設定を説明します |
+| `battery-revamped` | ターミナルではメニューを表示します |
+
+## 設定
+
+すべてのオプションは、`--interval 2` のようなダッシュ付きのコマンドオプションと、`BATTERY_REVAMPED_INTERVAL` のような環境変数でも指定できます。優先順位はコマンドライン、環境変数、tmux オプションの順です。tmux オプションを空にすると既定値を意味します。コマンドラインや環境変数で空の値を渡した場合は、そのまま使います。`doctor` は、プラグインが知らない値を持つ設定を挙げます。`apply` に渡した設定は、ポップアップのキーとすべてのステータス呼び出しに引き継がれます。
+
+### 読み取りと警告
+
+| オプション | 既定値 | 意味 |
+|:-----|:-----|:-----|
+| `@battery_revamped_interval` | `15` | 電池残量と状態の読み取りが新しいとみなす秒数です。options 描画モードのティッカーでは `minute` も使えます |
+| `@battery_revamped_detail_interval` | `60` | 残り時間、ワット数、サイクル数、健全性が新しいとみなす秒数です |
+| `@battery_revamped_render` | `jobs` | `options` は `#()` を実行する代わりに公開されたオプションを読みます。それ以外の値は `jobs` を意味します |
+| `@battery_revamped_history_size` | `16` | `#{battery_sparkline}` のために保持する読み取りの数です |
+| `@battery_revamped_low_threshold` | `20` | 放電中に低いとみなす残量のパーセントです |
+| `@battery_revamped_critical_threshold` | `10` | 放電中に危険とみなす残量のパーセントです |
+| `@battery_revamped_low_icon`, `@battery_revamped_critical_icon` | 空 | `#{battery_alert_icon}` が低い残量と危険な残量で表示するものです |
+| `@battery_revamped_hide_on_ac` | `0` | `1` にすると、放電中でない限りすべてのプレースホルダーが空になります |
+| `@battery_revamped_notify` | `0` | `1` にすると、残量が低、危険、満充電になったときにデスクトップ通知を送ります |
+
+### アイコンと色
+
+| オプション | 既定値 | 意味 |
+|:-----|:-----|:-----|
+| `@battery_revamped_icons` | `ascii` | `nerd` は 8 段階に充電中の変種を含む Nerd Font の電池記号を使い、すべての指標にラベルを付けます。段階ごとのアイコンのオプションが優先されます |
+| `@battery_revamped_charge_tier{1..8}_icon` | `▁` to `█` | 各残量段階のアイコンです。段階 1 が最も低い段階です |
+| `@battery_revamped_charge_tier{1..8}_{fg,bg}_color` | 空 | 各残量段階の色で、たとえば`#[fg=green]`です |
+| `@battery_revamped_status_{charged,charging,discharging,attached,unknown}_icon` | `=`, `+`, `-`, `!`, `?` | 各状態のアイコンです。`attached` は AC 電源につながっていて充電していない状態です |
+| `@battery_revamped_status_{state}_{fg,bg}_color` | 空 | 各状態の色です |
+| `@battery_revamped_source_ac_label`, `@battery_revamped_source_battery_label` | `AC`, `Bat` | 電池を使っていないときと使っているときの `#{battery_power_source}` の文字です |
+| `@battery_revamped_before`, `@battery_revamped_after` | 空 | `#{battery_percentage}` が表示されるときだけその前後に置く文字です。`{icon}` は残量アイコン、`{color}` は残量段階の色になります |
+
+### 書式とラベル
+
+| オプション | 既定値 | 意味 |
+|:-----|:-----|:-----|
+| `@battery_revamped_percentage_format` | `%s%%` | 残量の printf 書式です |
+| `@battery_revamped_remain_format` | `%s` | 2 つの残り時間プレースホルダーの printf 書式です |
+| `@battery_revamped_watts_format` | `%sW` | ワット数の printf 書式です |
+| `@battery_revamped_cycles_format` | `%s` | サイクル数の printf 書式です |
+| `@battery_revamped_health_format` | `%s%%` | 健全性の printf 書式です |
+| `@battery_revamped_drain_rate_format` | `%s%%/h` | 減少率の printf 書式です |
+| `@battery_revamped_graph_width` | `10` | 残量バーのセル数で、バーを埋める幅でもあります |
+| `@battery_revamped_graph_full` | `█` | 埋まったセルです |
+| `@battery_revamped_graph_empty` | `░` | 空のセルです |
+| `@battery_revamped_<metric>_label` | 空 | 値が空でないときだけ、1 つの指標の値の前に表示する文字です |
+| `@battery_revamped_fixed_width` | `off` | `on` にすると、残量を自然な幅の 4 文字まで左側で埋めます |
+| `@battery_revamped_<metric>_width` | 空 | 1 つの指標をこの文字数まで埋めます。これより長い値は切りません |
+
+ラベルと幅を持てる指標は、`percentage`、`graph`、`remain`、`charging_watts`、`cycles`、`health`、`drain_rate`、`estimate`、`sparkline`、`power_source` です。
+
+### ポップアップ
+
+| オプション | 既定値 | 意味 |
+|:-----|:-----|:-----|
+| `@battery_revamped_popup_key` | `M-b` | カードのポップアップを開くプレフィックスキーです。`off` は何もバインドしません |
+| `@battery_revamped_popup_width` | `44` | ポップアップの幅です |
+| `@battery_revamped_popup_height` | `16` | ポップアップの高さです |
+
+### 内部状態
+
+プラグインがこれらのオプションを自分で書き込みます。設定しないでください。
+
+| オプション | 保持する内容 |
+|:-----|:-----|
+| `@battery_revamped_published` | ステータスラインが使う指標です。読み込み時に記録するので、options モードはそれだけを書き込みます |
+| `@battery_revamped_out_<metric>` | options モードでの各指標の描画結果です |
+| `@battery_revamped_ticker_pid` | options モードのバックグラウンドプロセスのプロセス ID です |
+| `@battery_revamped_history` | `#{battery_sparkline}` の元になる最近の残量の読み取りです |
+| `@battery_revamped_alert_level` | 最後に見た段階で、`ok`、`low`、`critical`、`full`、`unknown` のいずれかです。通知が境目ごとに 1 回になるために使います |
+| `@battery_revamped_snap_pct`、`@battery_revamped_snap_ts` | 減少率の測定の起点となる読み取りです |
+| `@battery_revamped_percent` などの値、`_ts`、`_lock` | 保存された読み取り、各読み取りの時刻、更新のロックです |
+
+## キーバインド
+
+| キー | 動作 | 既定 |
+|:-----|:-----|:-----|
+| `prefix + M-b` | 保存済みの読み取りのカードをポップアップに開きます。どのキーでも閉じます | バインド済み |
+
+`@battery_revamped_popup_key` で別のキーを指定でき、`off` はバインドしません。既定のキーはすでにほかのバインドが使っている場合は使わずに残され、`battery-revamped doctor` が知らせます。
+
+<a id="仕組み"></a>
+
+## 仕組み
+
+tmux がプラグインを読み込むとき、[`battery-revamped.tmux`](battery-revamped.tmux) が 1 回実行されます。`status-left` と `status-right` が使う指標を `@battery_revamped_published` に記録し、各プレースホルダーを [`bin/battery-revamped`](bin/battery-revamped) の呼び出しに置き換えます。`options` モードではオプションの読み取りに置き換え、バックグラウンドプロセスを起動します。
+
+既定のモードでは、各 `#()` 呼び出しが保存済みの読み取りをすぐに返します。読み取りが間隔より古いと、呼び出しはバックグラウンドで更新を始めてロックを取るので、同時に動く更新は 1 つだけです。残り時間、ワット数、サイクル数、健全性は読み取りの負担が大きいので、`@battery_revamped_detail_interval` 秒ごとに更新します。すべての値は 1 回の tmux 呼び出しで保存します。減少率は残量を 5 分以上前の読み取りと比べて求め、`#{battery_estimate}` は残りの残量をその率で割ります。
+
+通知は、低、危険、満充電に入るたびに 1 回、共有の通知ツールを通して送ります。読み取り、値、書式は [`lib/battery.sh`](lib/battery.sh) に、設定の表は [`lib/state.sh`](lib/state.sh) にあります。
+
+<a id="画面"></a>
+
+## 画面
+
+<details>
+<summary>実際の tmux の中で <code>make screens</code> により録画した全画面。押したキーはステータスラインに表示されます</summary>
+<br>
+
+<table>
+<tr>
+<td width="50%" valign="top"><img src="screens/status.png" alt="battery-revamped: 段階のアイコンと色、状態、残り時間、電源を含む電池残量"><br><sub>段階のアイコンと色、状態、残り時間、電源を含む電池残量、<code>hero.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/popup.png" alt="battery-revamped: prefix M-b でカードをポップアップに開きます"><br><sub><code>prefix M-b</code> でカードをポップアップに開きます、<code>hero.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/icons.png" alt="battery-revamped: @battery_revamped_icons を nerd にすると段階ごとの記号とラベルが付きます"><br><sub><code>@battery_revamped_icons</code> を <code>nerd</code> にすると段階ごとの記号とラベルが付きます、<code>hero.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/graph.png" alt="battery-revamped: 残量バー、残量、スパークライン"><br><sub>残量バー、残量、スパークライン、<code>hero.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/options.png" alt="battery-revamped: options 描画モードでは各プレースホルダーが tmux オプションを読みます"><br><sub><code>options</code> 描画モードでは各プレースホルダーが tmux オプションを読みます、<code>hero.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/drain.png" alt="battery-revamped: 1 時間あたりの減少率"><br><sub>1 時間あたりの減少率、<code>features.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/estimate.png" alt="battery-revamped: 見積もり、減少率、残り時間"><br><sub>見積もり、減少率、残り時間、<code>features.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/estimate-label.png" alt="battery-revamped: @battery_revamped_estimate_label で見積もりの前に語を置きます"><br><sub><code>@battery_revamped_estimate_label</code> で見積もりの前に語を置きます、<code>features.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/drain-format.png" alt="battery-revamped: @battery_revamped_drain_rate_format で減少率の書式を変えます"><br><sub><code>@battery_revamped_drain_rate_format</code> で減少率の書式を変えます、<code>features.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/charging.png" alt="battery-revamped: 充電中の見積もりは満充電までの時間です"><br><sub>充電中の見積もりは満充電までの時間です、<code>features.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/low.png" alt="battery-revamped: 残量が低いときの警告アイコン"><br><sub>残量が低いときの警告アイコン、<code>features.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/thresholds.png" alt="battery-revamped: @battery_revamped_low_threshold で低い残量の境目を動かします"><br><sub><code>@battery_revamped_low_threshold</code> で低い残量の境目を動かします、<code>features.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/critical.png" alt="battery-revamped: 残量が危険なときの警告アイコン"><br><sub>残量が危険なときの警告アイコン、<code>features.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/critical-threshold.png" alt="battery-revamped: @battery_revamped_critical_threshold で危険な残量の境目を動かします"><br><sub><code>@battery_revamped_critical_threshold</code> で危険な残量の境目を動かします、<code>features.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/alert-icons.png" alt="battery-revamped: @battery_revamped_low_icon と @battery_revamped_critical_icon で警告の記号を決めます"><br><sub><code>@battery_revamped_low_icon</code> と <code>@battery_revamped_critical_icon</code> で警告の記号を決めます、<code>features.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/state-charged.png" alt="battery-revamped: 満充電の状態"><br><sub>満充電の状態、<code>features.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/state-attached.png" alt="battery-revamped: AC 電源につながっていて充電していない状態"><br><sub>AC 電源につながっていて充電していない状態、<code>features.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/state-unknown.png" alt="battery-revamped: 不明な状態"><br><sub>不明な状態、<code>features.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/status-icons.png" alt="battery-revamped: @battery_revamped_status_<state>_icon とその色"><br><sub><code>@battery_revamped_status_<state>_icon</code> とその色、<code>features.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/status-colors.png" alt="battery-revamped: #{battery_color_status_fg} と #{battery_color_status_bg}"><br><sub><code>#{battery_color_status_fg}</code> と <code>#{battery_color_status_bg}</code>、<code>features.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/tiers.png" alt="battery-revamped: @battery_revamped_charge_tier7_icon とその色"><br><sub><code>@battery_revamped_charge_tier7_icon</code> とその色、<code>features.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/format.png" alt="battery-revamped: @battery_revamped_percentage_format で残量の書式を変えます"><br><sub><code>@battery_revamped_percentage_format</code> で残量の書式を変えます、<code>features.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/remain-format.png" alt="battery-revamped: @battery_revamped_remain_format で残り時間の書式を変えます"><br><sub><code>@battery_revamped_remain_format</code> で残り時間の書式を変えます、<code>features.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/details.png" alt="battery-revamped: ワット数、サイクル数、健全性"><br><sub>ワット数、サイクル数、健全性、<code>features.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/detail-formats.png" alt="battery-revamped: @battery_revamped_watts_format、_cycles_format、_health_format"><br><sub><code>@battery_revamped_watts_format</code>、<code>_cycles_format</code>、<code>_health_format</code>、<code>features.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/detail-interval.png" alt="battery-revamped: @battery_revamped_detail_interval で詳細を読む間隔を決めます"><br><sub><code>@battery_revamped_detail_interval</code> で詳細を読む間隔を決めます、<code>features.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/fixed.png" alt="battery-revamped: @battery_revamped_fixed_width で残量を自然な幅に揃えます"><br><sub><code>@battery_revamped_fixed_width</code> で残量を自然な幅に揃えます、<code>features.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/width.png" alt="battery-revamped: @battery_revamped_percentage_width で 1 つの指標を独自の幅に揃えます"><br><sub><code>@battery_revamped_percentage_width</code> で 1 つの指標を独自の幅に揃えます、<code>features.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/labels.png" alt="battery-revamped: 残量の前の独自のラベル"><br><sub>残量の前の独自のラベル、<code>features.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/label-health.png" alt="battery-revamped: 健全性の前の独自のラベル"><br><sub>健全性の前の独自のラベル、<code>features.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/graph-width.png" alt="battery-revamped: @battery_revamped_graph_width、_graph_full、_graph_empty でバーの形を決めます"><br><sub><code>@battery_revamped_graph_width</code>、<code>_graph_full</code>、<code>_graph_empty</code> でバーの形を決めます、<code>features.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/power-source.png" alt="battery-revamped: @battery_revamped_source_battery_label と _source_ac_label"><br><sub><code>@battery_revamped_source_battery_label</code> と <code>_source_ac_label</code>、<code>features.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/power-source-ac.png" alt="battery-revamped: 充電中の電源ラベル"><br><sub>充電中の電源ラベル、<code>features.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/hide-on-ac.png" alt="battery-revamped: @battery_revamped_hide_on_ac で電池を使っていないときはすべて空になります"><br><sub><code>@battery_revamped_hide_on_ac</code> で電池を使っていないときはすべて空になります、<code>features.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/before-after.png" alt="battery-revamped: @battery_revamped_before と _after に {icon} と {color} を使います"><br><sub><code>@battery_revamped_before</code> と <code>_after</code> に <code>{icon}</code> と <code>{color}</code> を使います、<code>features.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/notify.png" alt="battery-revamped: @battery_revamped_notify は境目を越えるたびに通知を 1 回送ります。ここでは代用の通知ツールの記録です"><br><sub><code>@battery_revamped_notify</code> は境目を越えるたびに通知を 1 回送ります。ここでは代用の通知ツールの記録です、<code>features.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/popup-size.png" alt="battery-revamped: @battery_revamped_popup_width と _popup_height でポップアップの大きさを決めます"><br><sub><code>@battery_revamped_popup_width</code> と <code>_popup_height</code> でポップアップの大きさを決めます、<code>features.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/popup-key.png" alt="battery-revamped: @battery_revamped_popup_key でポップアップに別のキーを割り当てます"><br><sub><code>@battery_revamped_popup_key</code> でポップアップに別のキーを割り当てます、<code>features.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/interval.png" alt="battery-revamped: @battery_revamped_interval で読み取りが新しい期間を決めます"><br><sub><code>@battery_revamped_interval</code> で読み取りが新しい期間を決めます、<code>features.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/version.png" alt="battery-revamped: バージョン"><br><sub>バージョン、<code>stills.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/error.png" alt="battery-revamped: 不明なコマンド"><br><sub>不明なコマンド、<code>stills.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/status-command.png" alt="battery-revamped: status percentage と status graph は 1 つずつプレースホルダーを表示します"><br><sub><code>status percentage</code> と <code>status graph</code> は 1 つずつプレースホルダーを表示します、<code>stills.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/refresh.png" alt="battery-revamped: refresh は電池を今すぐ読み取ります"><br><sub><code>refresh</code> は電池を今すぐ読み取ります、<code>stills.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/card.png" alt="battery-revamped: card はすべての値を表示します"><br><sub><code>card</code> はすべての値を表示します、<code>stills.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/list.png" alt="battery-revamped: list はすべてのバインドを表示します"><br><sub><code>list</code> はすべてのバインドを表示します、<code>stills.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/json.png" alt="battery-revamped: list --json は同じ計画を 1 つのオブジェクトで表示します"><br><sub><code>list --json</code> は同じ計画を 1 つのオブジェクトで表示します、<code>stills.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/doctor.png" alt="battery-revamped: doctor"><br><sub><code>doctor</code>、<code>stills.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/menu.png" alt="battery-revamped: メニュー"><br><sub>メニュー、<code>stills.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/menu-card.png" alt="battery-revamped: メニューからのカード"><br><sub>メニューからのカード、<code>stills.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/accent.png" alt="battery-revamped: BATTERY_REVAMPED_ACCENT によるアクセント"><br><sub><code>BATTERY_REVAMPED_ACCENT</code> によるアクセント、<code>stills.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/plain-menu.png" alt="battery-revamped: gum なしのメニュー"><br><sub>gum なしのメニュー、<code>stills.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/plain-doctor.png" alt="battery-revamped: gum なしでメニューから実行した doctor"><br><sub>gum なしでメニューから実行した <code>doctor</code>、<code>stills.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/plain-card.png" alt="battery-revamped: gum なしの card"><br><sub>gum なしの <code>card</code>、<code>stills.tape</code> から</sub></td>
+<td width="50%" valign="top"><img src="screens/themes.png" alt="battery-revamped: 6 つのテーマのヘッダー"><br><sub>6 つのテーマのヘッダー、<code>themes.tape</code> から</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/help.png" alt="battery-revamped: ヘルプページ"><br><sub>ヘルプページ、<code>help.tape</code> から</sub></td>
+</tr>
+</table>
+
+録画は本物のプラグインと tmux を動かします。`pmset`、`system_profiler`、`ioreg`、`osascript` は小さなスクリプトで代用しているので、画面の値はそれらのものです。電池は、録画が変えない限り 1 つの状態を保ちます。
+
+</details>
+
+## 移植性
+
+プラグインは POSIX `sh` です。CI は次の各行ですべてのスイートを実行します。
+
+| シェル | 状態 |
+|:-----|:-----|
+| `dash`、macOS の `/bin/sh` | 対応 |
+| `bash` 3.2 と 5.x、システムの `zsh` と Homebrew の `zsh` | 対応 |
+
+| システム | 状態 |
+|:-----|:-----|
+| macOS | Apple Silicon と Intel の Tahoe。付属のツール、Homebrew の GNU ツール、Homebrew の uutils で動作します |
+| Linux | x86_64 と arm64 の Ubuntu 26.04。GNU coreutils、uutils、BusyBox で動作します |
 
 ## 開発
 
 | コマンド | 実行内容 |
-|:--------|:-------------|
-| `make test` | [`test/`](test)以下のbatsテスト |
-| `make lint` | すべてのシェルファイルへのshellcheck |
-| `make coverage` | Linuxでのkcovによる行カバレッジ。95%未満で失敗します |
+|:-----|:-----|
+| `make fmt` | すべてのスクリプトに shfmt `-i 2` を実行します |
+| `make lint` | shfmt、ShellCheck、mandoc、yamllint、actionlint を警告ゼロで実行します |
+| `make test` | システムの `sh` で bats のスイートを実行します |
+| `make test-all` | インストール済みのすべてのシェルでスイートを実行します。macOS では bash と zsh の両方のビルドを使います |
+| `make test-linux` | Ubuntu コンテナでスイートを実行します |
+| `make coverage` | この Mac と Ubuntu コンテナで bashcov を実行し、結果を統合して 100 パーセントを条件にします |
+| `make screens` | 上の画面を、macOS で VHS を使い tmux 内の本物のプラグインから録画します |
+| `make install` | コマンド、man ページ、補完を `PREFIX` の下に入れます |
 
-macOS では、`brew bundle` を実行すると、これらのターゲットが使うツールがすべて [`Brewfile`](Brewfile) からインストールされます。
+macOS では、`brew bundle` が [`Brewfile`](Brewfile) からこれらのターゲットが呼ぶすべてのツールをインストールします。
 
-<a id="license"></a>
+コミットは Conventional Commits 形式で、`main` に直接入ります。`main` の `ci` が成功すると、`release.yml` が semantic-release を実行します。前回のタグ以降の `feat` または `fix` ごとにリリースが公開され、バージョン定数が更新され、ノートが [`CHANGELOG.md`](CHANGELOG.md) に追加されます。
 
 ## ライセンス
 
@@ -379,3 +478,4 @@ macOS では、`brew bundle` を実行すると、これらのターゲットが
 | [`tmux-weather-revamped`](https://github.com/tmux-revamped/tmux-weather-revamped) | wttr.inの天気をバックグラウンドで取得し、ステータスバーを待たせずに表示します |
 
 <!-- family:end -->
+

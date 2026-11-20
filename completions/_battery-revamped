@@ -1,0 +1,116 @@
+#compdef battery-revamped
+
+_battery_revamped() {
+  local -a commands
+  commands=(
+    'apply:bind the key and fill the status placeholders'
+    'list:print every command apply would send'
+    'status:print one placeholder'
+    'refresh:read the battery now'
+    'card:print every figure as a table'
+    'popup:open the battery card in a tmux popup'
+    'popup-card:print the card and wait for a key'
+    'daemon:publish the placeholders on every tick'
+    'doctor:check this machine'
+    'version:print the version'
+    'help:print the help page'
+  )
+
+  _arguments \
+    '--json[list prints one JSON object]' \
+    '--theme[colours of the terminal interface]:theme:(kodougu catppuccin-mocha catppuccin-latte dracula nord gruvbox tokyo-night mono)' \
+    '--popup-key[key of the card popup, or off]:value:' \
+    '--popup-width[width of the popup]:value:' \
+    '--popup-height[height of the popup]:value:' \
+    '--interval[seconds a reading stays fresh, or minute]:value:' \
+    '--detail-interval[seconds the remaining time, watts, cycles and health stay fresh]:value:' \
+    '--render[jobs or options]:value:(jobs options)' \
+    '--percentage-format[printf format of the charge]:value:' \
+    '--icons[ascii or nerd]:value:(ascii nerd)' \
+    '--graph-width[cells of the charge bar]:value:' \
+    '--graph-full[a filled cell of the bar]:value:' \
+    '--graph-empty[an empty cell of the bar]:value:' \
+    '--remain-format[printf format of remain and estimate]:value:' \
+    '--watts-format[printf format of the watts]:value:' \
+    '--cycles-format[printf format of the cycle count]:value:' \
+    '--health-format[printf format of the health]:value:' \
+    '--drain-rate-format[printf format of the drain rate]:value:' \
+    '--history-size[readings kept for the sparkline]:value:' \
+    '--low-threshold[percent that counts as low while discharging]:value:' \
+    '--critical-threshold[percent that counts as critical while discharging]:value:' \
+    '--low-icon[what alert_icon prints at a low charge]:value:' \
+    '--critical-icon[what alert_icon prints at a critical charge]:value:' \
+    '--source-ac-label[what power_source prints off the battery]:value:' \
+    '--source-battery-label[what power_source prints on the battery]:value:' \
+    '--hide-on-ac[1 prints every placeholder empty unless discharging]:value:(0 1)' \
+    '--before[text before the charge]:value:' \
+    '--after[text after the charge]:value:' \
+    '--fixed-width[pad the charge to its natural width]:value:(on off)' \
+    '--notify[1 sends a desktop notification at low, critical and full]:value:(0 1)' \
+    '--charge-tier1-icon[icon of charge tier 1]:value:' \
+    '--charge-tier2-icon[icon of charge tier 2]:value:' \
+    '--charge-tier3-icon[icon of charge tier 3]:value:' \
+    '--charge-tier4-icon[icon of charge tier 4]:value:' \
+    '--charge-tier5-icon[icon of charge tier 5]:value:' \
+    '--charge-tier6-icon[icon of charge tier 6]:value:' \
+    '--charge-tier7-icon[icon of charge tier 7]:value:' \
+    '--charge-tier8-icon[icon of charge tier 8]:value:' \
+    '--charge-tier1-fg-color[foreground style of charge tier 1]:value:' \
+    '--charge-tier1-bg-color[background style of charge tier 1]:value:' \
+    '--charge-tier2-fg-color[foreground style of charge tier 2]:value:' \
+    '--charge-tier2-bg-color[background style of charge tier 2]:value:' \
+    '--charge-tier3-fg-color[foreground style of charge tier 3]:value:' \
+    '--charge-tier3-bg-color[background style of charge tier 3]:value:' \
+    '--charge-tier4-fg-color[foreground style of charge tier 4]:value:' \
+    '--charge-tier4-bg-color[background style of charge tier 4]:value:' \
+    '--charge-tier5-fg-color[foreground style of charge tier 5]:value:' \
+    '--charge-tier5-bg-color[background style of charge tier 5]:value:' \
+    '--charge-tier6-fg-color[foreground style of charge tier 6]:value:' \
+    '--charge-tier6-bg-color[background style of charge tier 6]:value:' \
+    '--charge-tier7-fg-color[foreground style of charge tier 7]:value:' \
+    '--charge-tier7-bg-color[background style of charge tier 7]:value:' \
+    '--charge-tier8-fg-color[foreground style of charge tier 8]:value:' \
+    '--charge-tier8-bg-color[background style of charge tier 8]:value:' \
+    '--status-charged-icon[icon of the charged state]:value:' \
+    '--status-charging-icon[icon of the charging state]:value:' \
+    '--status-discharging-icon[icon of the discharging state]:value:' \
+    '--status-attached-icon[icon of the attached state]:value:' \
+    '--status-unknown-icon[icon of the unknown state]:value:' \
+    '--status-charged-fg-color[foreground style of the charged state]:value:' \
+    '--status-charged-bg-color[background style of the charged state]:value:' \
+    '--status-charging-fg-color[foreground style of the charging state]:value:' \
+    '--status-charging-bg-color[background style of the charging state]:value:' \
+    '--status-discharging-fg-color[foreground style of the discharging state]:value:' \
+    '--status-discharging-bg-color[background style of the discharging state]:value:' \
+    '--status-attached-fg-color[foreground style of the attached state]:value:' \
+    '--status-attached-bg-color[background style of the attached state]:value:' \
+    '--status-unknown-fg-color[foreground style of the unknown state]:value:' \
+    '--status-unknown-bg-color[background style of the unknown state]:value:' \
+    '--percentage-label[label before the charge]:value:' \
+    '--graph-label[label before the charge bar]:value:' \
+    '--remain-label[label before the remaining time]:value:' \
+    '--charging-watts-label[label before the watts]:value:' \
+    '--cycles-label[label before the cycle count]:value:' \
+    '--health-label[label before the health]:value:' \
+    '--drain-rate-label[label before the drain rate]:value:' \
+    '--estimate-label[label before the estimate]:value:' \
+    '--sparkline-label[label before the sparkline]:value:' \
+    '--power-source-label[label before the power source]:value:' \
+    '--percentage-width[width of the charge]:value:' \
+    '--remain-width[width of the remaining time]:value:' \
+    '--charging-watts-width[width of the watts]:value:' \
+    '--cycles-width[width of the cycle count]:value:' \
+    '--health-width[width of the health]:value:' \
+    '--drain-rate-width[width of the drain rate]:value:' \
+    '--estimate-width[width of the estimate]:value:' \
+    '--sparkline-width[width of the sparkline]:value:' \
+    '--power-source-width[width of the power source]:value:' \
+    '1:command:->command' \
+    '2:name:(percentage icon icon_charge icon_status color_fg color_bg color_charge_fg color_charge_bg color_status_fg color_status_bg graph remain charging_watts cycles health drain_rate estimate sparkline power_source alert_icon)'
+
+  if [[ "${state}" == command ]]; then
+    _describe 'command' commands
+  fi
+}
+
+_battery_revamped "$@"
