@@ -1,5 +1,22 @@
 # Changelog
 
+# [3.0.0](https://github.com/tmux-revamped/tmux-battery-revamped/compare/v2.0.0...v3.0.0) (2026-11-20)
+
+
+* feat!: rewrite the plugin in POSIX sh ([77a09e7](https://github.com/tmux-revamped/tmux-battery-revamped/commit/77a09e7037c8409934efe8caa25679d6f35ac057))
+
+
+### BREAKING CHANGES
+
+* the script moved from src/battery.sh to
+bin/battery-revamped. A placeholder is printed by "battery-revamped
+status NAME", where it was "battery.sh NAME", and "battery.sh start"
+is now "battery-revamped apply". bash is no longer required. A tmux
+option set to nothing now means its default, where an empty label,
+format, icon or graph cell used to print nothing; set it to off
+instead. The environment variables CACHE_SYNC, CACHE_MAX_RUN and
+TICKER_MAX_TICKS are gone.
+
 # [2.0.0](https://github.com/tmux-revamped/tmux-battery-revamped/compare/v1.4.3...v2.0.0) (2026-11-18)
 
 
